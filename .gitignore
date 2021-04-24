@@ -12,6 +12,7 @@ client/coverage
 client/build/
 
 # misc
+client/yarn.lock
 .DS_Store
 .env.local
 .env.development.local
