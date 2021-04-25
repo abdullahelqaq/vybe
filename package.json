@@ -6,11 +6,12 @@
   "scripts": {
     "client": "cd client && yarn start",
     "start": "yarn run build && node server",
-    "build": "cd client && yarn run build"
+    "build": "cd client && yarn && yarn run build"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.17.1"
   }
 }
