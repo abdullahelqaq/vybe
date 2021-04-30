@@ -15,7 +15,7 @@ const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
 
 function setSongs() {
-  const response = fetch(`http://localhost:3000/setSongs`, {
+  const response = fetch(`http://localhost:3000/setSongs?id=${urlParams.get("id")}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -23,22 +23,24 @@ function setSongs() {
     mode: 'cors',
     body: JSON.stringify(
       {
-        id: urlParams.get("id"),
-        songs: {
-          "test_id1": {
-            genre: "pop"
+        songs: [
+          {
+            id: "test_id1",
+            genre: "Pop"
           },
-          "test_id2": {
-            genre: "pop"
+          {
+            id: "test_id2",
+            genre: "Pop"
           },
-          "test_id3": {
-            genre: "rock"
+          {
+            id: "test_id3",
+            genre: "Movie"
           }
-        }
+        ]
       }
     )
   });
-  return response.json();
+  return response;
 }
 
 function App() {

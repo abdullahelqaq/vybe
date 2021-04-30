@@ -22,14 +22,6 @@ class Session {
 
   }
 
-  getStatus() {
-    return this.workerStatus;
-  }
-
-  getGeneratedQueue() {
-    return this.generatedSongs;
-  }
-
 }
 
 module.exports = Session;

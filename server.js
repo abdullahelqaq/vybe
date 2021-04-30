@@ -39,7 +39,7 @@ router.get('/authorized', (req, res) => {
 // Endpoint called when the user manually adds three new songs to their queue
 // Request body must contain the session id and list of song IDs
 router.post('/setSongs', (req, res) => {
-  const id = req.body.id;
+  const id = req.query.id;
   userSessions[id].setSongs(req.body.songs);
   console.log("setSongs");
 });
@@ -48,7 +48,7 @@ router.post('/setSongs', (req, res) => {
 // Endpoint called when the user skips a song in their queue
 // Request body must contain the session id and song ID
 router.post('/skip', (req, res) => {
-  const id = req.body.id;
+  const id = req.query.id;
   console.log("skip");
 });
 
@@ -57,8 +57,8 @@ router.post('/skip', (req, res) => {
 // Request body must contain the session id
 // Response body contains status code 0 (working) or 1 (completed)
 router.get('/status', (req, res) => {
-  const id = req.body.id;
-  console.log("status");
+  const id = req.query.id;
+  res.body = JSON.stringify({ status: userSessions[id].workerStatus });
 });
 
 // GET /queue
@@ -66,8 +66,8 @@ router.get('/status', (req, res) => {
 // Request body must contain the session id
 // Response body contains list of song IDs
 router.get('/queue', (req, res) => {
-  const id = req.body.id;
-  console.log("queue");
+  const id = req.query.id;
+  res.body = JSON.stringify({ queue: userSessions[id].generatedSongs });
 });
 
 
