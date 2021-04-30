@@ -10,6 +10,37 @@ const scopes = [];
 
 const url = `${authEndpoint}?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join("%20")}&response_type=code&show_dialog=true`;
 
+let sessionId = null;
+const queryString = window.location.search;
+const urlParams = new URLSearchParams(queryString);
+
+function setSongs() {
+  const response = fetch(`http://localhost:3000/setSongs`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    mode: 'cors',
+    body: JSON.stringify(
+      {
+        id: urlParams.get("id"),
+        songs: {
+          "test_id1": {
+            genre: "pop"
+          },
+          "test_id2": {
+            genre: "pop"
+          },
+          "test_id3": {
+            genre: "rock"
+          }
+        }
+      }
+    )
+  });
+  return response.json();
+}
+
 function App() {
   return (
     <div className="App">
@@ -23,6 +54,12 @@ function App() {
           href={url}
         >
           Login to Spotify
+        </a>
+        <a
+          className="btn btn--loginApp-link"
+          onClick={setSongs}
+        >
+          Set Songs
         </a>
       </header>
     </div>
