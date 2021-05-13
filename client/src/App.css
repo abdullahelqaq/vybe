@@ -1,5 +1,50 @@
+html, body {
+  min-height: 100%;
+  padding: 0;
+  margin: 0;
+}
+
 .App {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  background-image: linear-gradient( #ac223b, #2556b8);
+}
+
+.App-header {
+  color: white;
+  height: 25%;
+  margin: 0px 20px 20px 20px;
+  padding: 20px;
+}
+
+.App-header h1, p {
   text-align: center;
+}
+
+.App-header p {
+  margin-top: -10px;
+}
+
+.App-widget {
+  margin: 20px;
+  padding: 5px 15px 15px 15px;
+  border-radius: 15px;
+  background-color: #282c34;
+  color: white;
+  height: 22%;
+  opacity: 85%;
+}
+
+.App-widget h2 {
+  margin-bottom: 15px;
+}
+
+.App-widget h3, h4 {
+  text-align: center;
+  margin: 5px;
 }
 
 .App-logo {
@@ -13,17 +58,6 @@
   }
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
 .App-link {
   color: #61dafb;
 }
@@ -35,4 +69,55 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-widget {
+    animation: App-widget-breath infinite 5s linear;
+  }
+}
+
+@keyframes App-widget-breath {
+  0% {
+    margin: 20px;
+  }
+  50% {
+    margin: 15px;
+  }
+  100% {
+    margin: 20px;
+  }
+}
+
+/* MOVE TO NEW FILE BELOW */
+
+.Queue {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  background-color: #282C34;
+  opacity: 0.85;
+}
+
+.Queue-Empty {
+  text-align: center;
+  color: white;
+
+  position: relative;
+  top: 40%;
+  transform: translateY(-50%);
+}
+
+.Search {
+  width: 245px;
+  height: 25px;
+  background-color: black;
+  color: white;
+}
+
+::placeholder {
+  color: white;
+  opacity: 1;
 }
