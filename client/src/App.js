@@ -57,6 +57,25 @@ class Queue extends React.Component {
     }
   }
 
+  stopExitClick(e) {
+    e.stopPropagation();
+    this.setState({
+      input_active: true
+    });
+  }
+
+  checkExitClick() {
+    console.log("here");
+    if (!this.state.input_active) {
+      console.log("leaving");
+      this.props.onClick();
+    } else {
+      this.setState({
+        input_active: false,
+      });
+    }
+  }
+
   render() {
     if (this.props.queue.length === 0) {
       return (
