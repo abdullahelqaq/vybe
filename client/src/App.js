@@ -7,32 +7,73 @@ class Queue extends React.Component {
     super(props);
 
     this.state = {
-      songs: [],
+      songs: [{name: "Heat Waves", artist: "Glass Animals"}],
+      input_active: false,
     };
 
+  }
+
+  stopExitClick(e) {
+    e.stopPropagation();
+    this.setState({
+      input_active: true
+    });
+  }
+
+  checkExitClick() {
+    console.log("here");
+    if (!this.state.input_active) {
+      console.log("leaving");
+      this.props.onClick();
+    } else {
+      this.setState({
+        input_active: false,
+      });
+    }
   }
 
   render() {
     if (this.state.songs.length === 0) {
       return (
-        <div className="Queue">
+        <div className="Queue" onClick={this.checkExitClick.bind(this)}>
           <div className="Queue-Empty">
             <h2>Add Songs to Queue</h2>
-            <input className="Search" type="text" placeholder="Search.." />
+            <input
+              onClick={this.stopExitClick.bind(this)}
+              className="Search"
+              type="text"
+              placeholder="Search.."
+            />
+          </div>
+        </div>
+      );
+    } else {
+      return (
+        <div className="Queue" onClick={this.checkExitClick.bind(this)}>
+          <div className="Queue-Header">
+            <input
+              onClick={this.stopExitClick.bind(this)}
+              className="Search"
+              type="text"
+              placeholder="Search.."
+            />
+            <Player current_song={this.props.current_song} />
           </div>
         </div>
       );
     }
-
-    return (
-      <div className="Queue">
-        
-      </div>
-    );
   }
 
 }
 
+function Player(props) {
+  return (
+    <div className="Player">
+      <h1>{props.current_song.name}</h1>
+      <b><p>{props.current_song.artist}</p></b>
+    </div>
+  );
+}
 
 class App extends React.Component {
 
@@ -41,6 +82,10 @@ class App extends React.Component {
 
     this.state = {
       active_page: 0,
+      current_song: {
+        name: "Heat Waves",
+        artist: "Glass Animals"
+      }
     }
   }
 
@@ -50,16 +95,33 @@ class App extends React.Component {
     })
   }
 
+  renderDashboardHeader() {
+    if (this.state.current_song == null) {
+      return (
+        <div>
+          <h2 className="Header-Left">Ready for Tunes</h2>
+        </div>
+      );
+    } else {
+      return (
+        <div>
+          <h2 className="Header-Left">Currently Playing</h2>
+          <Player current_song={this.state.current_song} />
+        </div>
+      );
+    }
+  }
+
+  returnToDashboard() {
+    this.setActivePage(0);
+  }
+
   render() {
 
     if (this.state.active_page === 0) {
       return (
         <div className="App">
-          <div className="App-header">
-            <h2>Currently Playing</h2>
-            <h1>Heat Waves</h1>
-            <b><p>GLASS ANIMALS</p></b>
-          </div>
+          {this.renderDashboardHeader()}
           <div className="App-widget" onClick={() => this.setActivePage(1)}>
             <h2>Queue</h2>
             <h4>UP NEXT</h4>
@@ -75,7 +137,10 @@ class App extends React.Component {
     } else if (this.state.active_page === 1) {
       return (
       <div className="App">
-        <Queue />
+        <Queue
+          onClick={this.returnToDashboard.bind(this)}
+          current_song={this.state.current_song}
+        />
       </div>
       );
 

@@ -13,18 +13,22 @@ html, body {
   background-image: linear-gradient( #ac223b, #2556b8);
 }
 
-.App-header {
-  color: white;
-  height: 25%;
-  margin: 0px 20px 20px 20px;
+.Header-Left {
   padding: 20px;
+  color: white;
 }
 
-.App-header h1, p {
+.Player {
+  color: white;
+  margin: 0px 20px 40px 20px;
+  
+}
+
+.Player h1, p {
   text-align: center;
 }
 
-.App-header p {
+.Player p {
   margin-top: -10px;
 }
 
@@ -110,14 +114,29 @@ html, body {
   transform: translateY(-50%);
 }
 
+.Queue-Header {
+  text-align: center;
+  color: white;
+  margin: auto;
+  margin-top: 40px;
+  width: 80%;
+}
+
 .Search {
   width: 245px;
-  height: 25px;
+  height: 30px;
   background-color: black;
   color: white;
+  border-radius: 10px;
 }
 
 ::placeholder {
   color: white;
   opacity: 1;
+}
+
+input[type='text'],
+input[type='number'],
+textarea {
+  font-size: 16px;
 }
