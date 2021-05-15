@@ -1134,6 +1134,11 @@ signal-exit@^3.0.0:
   resolved "https://registry.yarnpkg.com/signal-exit/-/signal-exit-3.0.3.tgz#a1410c2edd8f077b08b4e253c8eacfcaf057461c"
   integrity sha512-VUJ49FC8U1OxwZLxIbTTrDvLnf/6TDgxZcK8wxR8zs13xpx7xbG60ndBlhNrFi2EMuFRoeDoJO7wthSLq42EjA==
 
+skmeans@^0.11.3:
+  version "0.11.3"
+  resolved "https://registry.yarnpkg.com/skmeans/-/skmeans-0.11.3.tgz#6d4dafb8058520a792c10bae9d9b953a6b6379f4"
+  integrity sha512-nccEnlSeOMNAYM9ETMSq+m15u8g0KRCIvH2an/ROTx4Igmci/j3oYHBPGdAeGjhR7knAVoIIQwr/wy2dN/eKQA==
+
 spotify-web-api-node@^5.0.2:
   version "5.0.2"
   resolved "https://registry.yarnpkg.com/spotify-web-api-node/-/spotify-web-api-node-5.0.2.tgz#683669b3ccc046a5a357300f151df93a2b3539fe"
