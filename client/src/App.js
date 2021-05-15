@@ -1,47 +1,6 @@
 import logo from './logo.svg';
 import './App.css';
-
-export const authEndpoint = 'https://accounts.spotify.com/authorize';
-
-const clientId = "62598dfbbefd46eeb90783eb0b6d0ad9";
-const redirectUri = "http://localhost:3000/authorized/";
-//TODO: INSERT SCOPES: "https://developer.spotify.com/documentation/general/guides/scopes/
-const scopes = [];
-
-const url = `${authEndpoint}?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join("%20")}&response_type=code&show_dialog=true`;
-
-let sessionId = null;
-const queryString = window.location.search;
-const urlParams = new URLSearchParams(queryString);
-
-function setSongs() {
-  const response = fetch(`http://localhost:3000/setSongs?id=${urlParams.get("id")}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    mode: 'cors',
-    body: JSON.stringify(
-      {
-        songs: [
-          {
-            id: "test_id1",
-            genre: "Pop"
-          },
-          {
-            id: "test_id2",
-            genre: "Pop"
-          },
-          {
-            id: "test_id3",
-            genre: "Movie"
-          }
-        ]
-      }
-    )
-  });
-  return response;
-}
+import * as spotify from './spotify.js';
 
 function App() {
   return (
@@ -53,13 +12,13 @@ function App() {
         </p>
         <a
           className="btn btn--loginApp-link"
-          href={url}
+          href={spotify.authorizationUrl}
         >
           Login to Spotify
         </a>
         <a
           className="btn btn--loginApp-link"
-          onClick={setSongs}
+          onClick={spotify.setSongs}
         >
           Set Songs
         </a>

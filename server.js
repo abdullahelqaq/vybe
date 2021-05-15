@@ -12,27 +12,52 @@ let userSessions = {};
 // express configuration
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.resolve(__dirname, './client/build')));
 app.use('/', router);
+app.use(express.static(path.resolve(__dirname, './client/build')));
 
 
 // routes
 
 // GET /
-// Default initial endpoint
+// Default initial endpoint, redirect to login
 router.get('/', (req, res) => {
-  console.log("New user");
+  res.redirect(`/login`);
+});
+
+// GET /
+// Endpoint to request user login
+router.get('/login', (req, res) => {
   res.sendFile(path.resolve(__dirname, './client/build', 'index.html'));
 });
 
 // GET /authorized
 // Endpoint called when Spotify authorization completes on client side
-router.get('/authorized', (req, res) => {
-  token = req.query.code;
+router.get('/authorized', async (req, res) => {
+  code = req.query.code;
   id = uuidv4();
-  console.log("User authorized: Session ID: " + id + ", access token: " + token);
-  userSessions[id] = new Session(id, token);
-  res.redirect(`/?id=${id}&token=${token}`);
+  userSessions[id] = new Session(id);
+  console.log(`User authorized - Session id: ${id}`);
+  res.redirect(`/dashboard?id=${id}&code=${code}`);
+});
+
+// GET /dashboard
+// Endpoint called when user is authenticated and ready to display dashboard
+// If server has been refreshed (and id doesn't exist), redirect to login
+router.get('/dashboard', async (req, res) => {
+  const id = req.query.id;
+  if (!(id in userSessions)) {
+    res.redirect('/login');
+    return;
+  }
+  res.sendFile(path.resolve(__dirname, './client/build', 'index.html'));
+});
+
+// POST /setSongs
+// Endpoint called when the access token has been granted to the client
+router.post('/token', (req, res) => {
+  const accessToken = req.body.accessToken;
+  const refreshToken = req.body.refreshToken;
+  userSessions[id].setTokens(accessToken, refreshToken);
 });
 
 // POST /setSongs
@@ -41,7 +66,6 @@ router.get('/authorized', (req, res) => {
 router.post('/setSongs', (req, res) => {
   const id = req.query.id;
   userSessions[id].setSongs(req.body.songs);
-  console.log("setSongs");
 });
 
 // POST /skip
