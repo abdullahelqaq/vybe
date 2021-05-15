@@ -9,7 +9,7 @@ export const authEndpoint = 'https://accounts.spotify.com/authorize';
 const clientId = "62598dfbbefd46eeb90783eb0b6d0ad9";
 const clientSecret = "660c17961ea5435a9efaada516d3f528";
 const redirectUri = "http://localhost:3000/authorized";
-const scopes = ['user-top-read'];
+const scopes = ['user-top-read', 'playlist-read-private'];
 
 let accessToken, refreshToken;
 

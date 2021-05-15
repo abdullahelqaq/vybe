@@ -5,9 +5,12 @@ const skmeans = require("skmeans");
 
 const k = 3;
 const threshold = 0.3;
+const maxSongSuggestions = 10;
+const topSongsPlaylistYears = ['2020']
 
 let spotify = new SpotifyWebApi();
-let seedSongs, clusters;
+let seedSongs, playedSongs = [];
+let clusters, targetCluster;
 
 // for the identified cluster, determine thresholds to prevent outliers
 let thresholds = new Array(k).fill([threshold, threshold]).flat();
@@ -34,29 +37,52 @@ parentPort.on("message", function (msg) {
 // Retrieve top tracks for the user and apply k-means clustering
 // Then use the seed songs to identify the target cluster for song suggestions
 async function processTracks() {
-  const tracks = await retrieveUserTopTracks();
+  setStatus(1);
 
+  const tracks = await retrieveUserTopTracks();
+  
   // perform clustering
   let vectors = [];
   for (const [id, data] of Object.entries(tracks)) {
-    vectors.push([ data.valence, data.energy, data.danceability ]);
+    vectors.push([data.valence, data.energy, data.danceability]);
   }
   clusters = skmeans(vectors, k, 'kmpp');
-  
+
   // determine target cluster
   const seedSongsFeatures = await getAudioFeatures(seedSongs);
   for (const [id, data] of Object.entries(seedSongsFeatures)) {
-    console.log(`${id}: ${JSON.stringify(clusters.test([ data.valence, data.energy, data.danceability ]))}`);
+    console.log(`${id}: ${JSON.stringify(clusters.test([data.valence, data.energy, data.danceability]))}`);
   }
 }
 
 // Retrieve the user's top tracks (limit of 50 tracks)
 async function retrieveUserTopTracks() {
   const topTracks = await spotify.getMyTopTracks()
-    .then(function(data) {
+    .then(function (data) {
       return getAudioFeatures(data.body.items);
     });
-  return topTracks;
+  const playlistTracks = await spotify.searchPlaylists('Your Top Songs')
+    .then(async function (data) {
+      userPlaylistTracks = {};
+      for (const playlist of data.body.playlists.items) {
+        for (const year of topSongsPlaylistYears) {
+          if (playlist.name.startsWith('Your Top Songs') && playlist.name.includes(year) && playlist.owner.id == 'spotify') {
+            const tracks = await spotify.getPlaylist(playlist.id)
+              .then(function (data) {
+                const filteredTracks = [];
+                for (const playlistTrack of data.body.tracks.items)
+                  filteredTracks.push(playlistTrack.track);
+                return getAudioFeatures(filteredTracks);
+              });
+
+              userPlaylistTracks = { ...userPlaylistTracks, ...tracks };
+          }
+        }
+      }
+      return userPlaylistTracks;
+    });
+
+  return {...topTracks, ...userPlaylistTracks};
 }
 
 // Given a list of objects with an 'id' property, generate a dictionary of audio features for each one
@@ -64,7 +90,7 @@ async function getAudioFeatures(tracks) {
   let features = {};
   for (let track of tracks) {
     await spotify.getAudioFeaturesForTrack(track.id)
-      .then(function(data) {
+      .then(function (data) {
         features[track.id] = data.body;
         features[track.id].name = track.name;
       });
@@ -72,25 +98,34 @@ async function getAudioFeatures(tracks) {
   return features;
 }
 
-// Find songs from database in target cluster
-function findSongs() {
-  const maxSongSuggestions = 10;
-  let generatedSongs = [];
+// Skip the song and use user feedback to adjust cluster centers
+async function skipSong(feedback) {
 
-  let db = new sqlite3.Database('./data/SpotifyFeatures.db', sqlite3.OPEN_READWRITE, (err) => {
+}
+
+// Adjust cluster center
+async function likeSong() {
+
+}
+
+// Find songs from database in target cluster
+function findSongSuggestions() {
+  setStatus(1);
+
+  let db = new sqlite3.Database('./data/SpotifySongs.db', sqlite3.OPEN_READWRITE, (err) => {
     if (err) {
       return console.error(err.message);
     }
     console.log('Connected to database');
   });
 
-  const sql = `SELECT * FROM SpotifyFeatures WHERE genre = '${selectGenre}' ORDER BY RANDOM() LIMIT ${maxSongSuggestions}`;
+  const sql = `SELECT * FROM SpotifySongs WHERE NOT id IN (${playedSongs.join()}) AND  ORDER BY RANDOM() LIMIT ${maxSongSuggestions}`;
   db.all(sql, [], (err, rows) => {
     if (err) {
       throw err;
     }
-    generatedSongs = rows;
-    parentPort.postMessage(rows);
+
+    parentPort.postMessage({ type: 'songSuggestions', data: rows });
   });
 
   db.close((err) => {
@@ -99,4 +134,10 @@ function findSongs() {
     }
     console.log('Closed database');
   });
+
+  setStatus(0);
+}
+
+function setStatus(status) {
+  parentPort.postMessage({ type: 'songSuggestionStatus', data: status });
 }

@@ -6,16 +6,19 @@ class Session {
     this.accessToken = '';
     this.refreshToken = '';
 
-    this.generatedSongs = [];
-
+    this.songSuggestions = [];
+    this.songSuggestionStatus = 0; // 0 for idle, 1 for generating
     this.seedSongs = [];
 
     // background worker init
     this.worker = new Worker('./worker.js');
     this.worker.on('message', function (msg) {
       switch (msg.type) {
-        case 'generatedSongs':
-          this.generatedSongs = msg.data;
+        case 'songSuggestions':
+          this.songSuggestions = msg.data;
+          break;
+        case 'songSuggestionStatus':
+          this.songSuggestionStatus = msg.data;
           break;
       }
     });
@@ -30,6 +33,12 @@ class Session {
     this.accessToken = accessToken;
     this.refreshToken = refreshToken;
     this.worker.postMessage({type: 'tokens', data: {accessToken: accessToken, refreshToken: refreshToken}});
+  }
+
+  getSongSuggestions() {
+    if (this.songSuggestionStatus == 1)
+      return null;
+    return this.songSuggestions;
   }
 }
 
