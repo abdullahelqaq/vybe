@@ -1,5 +1,6 @@
 import logo from './logo.svg';
 import './App.css';
+import * as spotify from './spotify.js';
 
 function App() {
   return (
@@ -7,15 +8,19 @@ function App() {
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <p>
-          Edit <code>src/App.js</code> and save to reload.
+          vybe
         </p>
         <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
+          className="btn btn--loginApp-link"
+          href={spotify.authorizationUrl}
         >
-          Learn React
+          Login to Spotify
+        </a>
+        <a
+          className="btn btn--loginApp-link"
+          onClick={spotify.setSongs}
+        >
+          Set Songs
         </a>
       </header>
     </div>
