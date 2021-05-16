@@ -20,7 +20,7 @@ let spotify = new SpotifyWebApi({
 
 export const authorizationUrl = `${authEndpoint}?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join("%20")}&response_type=code&show_dialog=true`;
 
-function checkUrlParams() {
+export function checkUrlParams() {
   if (urlParams.has('id')) {
     sessionId = urlParams.get('id');
   }
@@ -48,6 +48,7 @@ async function authenticate(code) {
   const tokens = await tokenResponse.json();
   accessToken = tokens.access_token;
   refreshToken = tokens.refresh_token;
+  spotify.setAccessToken(accessToken);
 
   console.log("Token retrieved");
   const uploadResponse = await fetch(`http://localhost:3000/token?id=${sessionId}`, {
@@ -76,12 +77,18 @@ export function setSongs() {
     body: JSON.stringify({
         songs: [
           {
+            track_name: "Faded",
+            artist_name: "Alan Walker",
             id: "7gHs73wELdeycvS48JfIos"
           },
           {
-            id: "2DGa7iaidT5s0qnINlwMjJ"
+            track_name: "Come & Go",
+            artist_name: "Juice WRLD",
+            id: "6ltMvd6CjoydQZ4UzAQaqh"
           },
           {
+            track_name: "In Your Arms",
+            artist_name: "ILLENIUM",
             id: "70YPzqSEwJvAIQ6nMs1cjY"
           }
         ]

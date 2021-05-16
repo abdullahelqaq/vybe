@@ -6,19 +6,23 @@ class Session {
     this.accessToken = '';
     this.refreshToken = '';
 
-    this.songSuggestions = [];
-    this.songSuggestionStatus = 0; // 0 for idle, 1 for generating
+    this.queue = [];
+    this.preferences = [];
+    this.status = 0; // 0 for idle, 1 for new queue waiting
     this.seedSongs = [];
 
     // background worker init
     this.worker = new Worker('./worker.js');
     this.worker.on('message', function (msg) {
       switch (msg.type) {
-        case 'songSuggestions':
-          this.songSuggestions = msg.data;
+        case 'queue':
+          this.queue = msg.data;
           break;
-        case 'songSuggestionStatus':
-          this.songSuggestionStatus = msg.data;
+        case 'preferences':
+          this.preferences = msg.data;
+          break;
+        case 'status':
+          this.status = msg.data;
           break;
       }
     });
@@ -35,10 +39,8 @@ class Session {
     this.worker.postMessage({type: 'tokens', data: {accessToken: accessToken, refreshToken: refreshToken}});
   }
 
-  getSongSuggestions() {
-    if (this.songSuggestionStatus == 1)
-      return null;
-    return this.songSuggestions;
+  skipSong(songId, feedback) {
+    this.worker.postMessage({type: 'skip', data: {id: songId, feedback: feedback}});
   }
 }
 

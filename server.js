@@ -70,31 +70,42 @@ router.post('/setSongs', (req, res) => {
 
 // POST /skip
 // Endpoint called when the user skips a song in their queue
-// Request body must contain the session id and song ID
+// Request must contain the session id and song ID
 router.post('/skip', (req, res) => {
   const id = req.query.id;
-  console.log("skip");
+  const songId = req.body.id;
+  const feedback = req.body.feedback;
+  userSessions[id].skipSong(songId, feedback);
 });
 
 // GET /status
 // Endpoint called when user checks for generated queue clustering status
-// Request body must contain the session id
+// Request query must contain the session id
 // Response body contains status code 0 (working) or 1 (completed)
 router.get('/status', (req, res) => {
   const id = req.query.id;
-  res.body = JSON.stringify({ status: userSessions[id].workerStatus });
+  res.body = JSON.stringify({ status: userSessions[id].status });
 });
 
 // GET /queue
 // Endpoint called when user requests to receive the generated queue
-// Request body must contain the session id
+// Request query must contain the session id
 // Response body contains list of song IDs
 router.get('/queue', (req, res) => {
   const id = req.query.id;
-  res.body = JSON.stringify({ queue: userSessions[id].generatedSongs });
+  res.body = JSON.stringify({ queue: userSessions[id].queue });
+  userSessions[id].status = 0;
 });
 
-
+// GET /preferences
+// Endpoint called when user requests to receive the current features for the cluster center
+// Request query must contain the session id
+// Response body contains preferences
+router.get('/preferences', (req, res) => {
+  const id = req.query.id;
+  res.body = JSON.stringify({ preferences: userSessions[id].preferences });
+  userSessions[id].status = 0;
+});
 
 
 const port = process.env.PORT || 3000;
