@@ -18,6 +18,10 @@ let spotify = new SpotifyWebApi({
   clientId: clientId
 });
 
+const checkServerStatusIntervalMs = 10000;
+
+checkUrlParams();
+
 export const authorizationUrl = `${authEndpoint}?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join("%20")}&response_type=code&show_dialog=true`;
 
 export function checkUrlParams() {
@@ -26,6 +30,7 @@ export function checkUrlParams() {
   }
   if (urlParams.has('code')) {
     authenticate(urlParams.get('code'));
+    setInterval(checkStatus, checkServerStatusIntervalMs);
   }
 }
 
@@ -98,4 +103,70 @@ export function setSongs() {
   return response;
 }
 
-checkUrlParams();
+export async function checkStatus() {
+  const statusResponse = await fetch(`http://localhost:3000/status?id=${sessionId}`, {
+    method: 'GET',
+    mode: 'cors'
+  });
+  const statusBody = await tokenResponse.json();
+  
+  if (statusBody.status == 1) {
+    const queueResponse = await fetch(`http://localhost:3000/queue?id=${sessionId}`, {
+      method: 'GET',
+      mode: 'cors'
+    });
+    const queueBody = await queueResponse.json();
+    const preferencesResponse = await fetch(`http://localhost:3000/preferences?id=${sessionId}`, {
+      method: 'GET',
+      mode: 'cors'
+    });
+    const preferencesBody = await preferencesResponse.json();
+
+    console.log("Updated queue: ");
+    console.log(queueBody.queue);
+    console.log("Updated preferences: ");
+    console.log(preferencesBody.preferences);
+  }
+}
+
+
+// SONG CONTROLS
+
+export function playSong(songId) {
+  //play 
+}
+
+export function skipSong(songId, feedback) {
+  const response = fetch(`http://localhost:3000/skip?id=${sessionId}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    mode: 'cors',
+    body: JSON.stringify({
+        id: songId,
+        feedback: feedback
+      }
+    )
+  });
+  return response;
+}
+
+export function finishSong(songId) {
+  const response = fetch(`http://localhost:3000/finish?id=${sessionId}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    mode: 'cors',
+    body: JSON.stringify({
+        id: songId
+      }
+    )
+  });
+  return response;
+}
+
+export function restartSong(songId) {
+  //seek to beginning
+}
