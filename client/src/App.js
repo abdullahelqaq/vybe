@@ -2,6 +2,10 @@ import React from 'react';
 import './App.css';
 import * as spotify from './spotify.js';
 import Slider from '@material-ui/core/Slider';
+import play_button from './vectors/play-button.svg'
+import next_button from './vectors/next-button.svg'
+import rewind_button from './vectors/rewind-button.svg'
+import pause_button from './vectors/pause-button.svg'
 
 // Parse URL
 const parsed_url = window.location.href.split("?");
@@ -148,11 +152,60 @@ class MoodControl extends React.Component {
   }
 }
 
+const player_controls = {
+  PLAY: 0,
+  PAUSE: 1,
+  REWIND: 2,
+  SKIP: 3
+}
+
 function Player(props) {
   return (
     <div className="Player">
       <h1>{props.current_song.track_name}</h1>
       <b><p>{props.current_song.artist_name}</p></b>
+      {props.withControls && (
+        <center>
+          <div className="Player-Grid">
+            <div className="Player-Button-Wrapper">
+              <img
+                className="Player-Button"
+                src={rewind_button}
+                onClick={() => props.callback(player_controls.REWIND)}
+                alt="rewind"
+              />
+            </div>
+            {props.paused === true && (
+              <div className="Player-Button-Wrapper">
+                <img
+                  className="Player-Button-Big"
+                  src={play_button}
+                  onClick={() => props.callback(player_controls.PLAY)}
+                  alt="play"  
+                />
+              </div>
+            )}
+            {props.paused === false && (
+              <div className="Player-Button-Wrapper">
+                <img
+                  className="Player-Button-Big"
+                  src={pause_button}
+                  onClick={() => props.callback(player_controls.PAUSE)}
+                  alt="pause"  
+                />
+              </div>
+            )}
+            <div className="Player-Button-Wrapper">
+              <img
+                className="Player-Button"
+                src={next_button}
+                onClick={() => props.callback(player_controls.SKIP)}
+                alt="skip"
+              />
+            </div>
+          </div>
+        </center>
+      )}
     </div>
   );
 }
@@ -177,6 +230,9 @@ class App extends React.Component {
     super(props);
 
     this.state = {
+
+      token: "DELETE ME",
+
       active_page: 0,
       current_song: {
         track_name: "Heat Waves",
@@ -197,6 +253,7 @@ class App extends React.Component {
         {name: "Tempo", value: 0.9},
         {name: "Valence", value: 0.4},
       ],
+      player_paused: false
     }
   }
 
@@ -204,6 +261,31 @@ class App extends React.Component {
     this.setState({
       active_page: i,
     })
+  }
+
+  playerCallback(action) {
+    switch (action) {
+      case player_controls.PLAY:
+        this.setState({
+          player_paused: false
+        });
+        break;
+
+      case player_controls.PAUSE:
+        this.setState({
+          player_paused: true
+        });
+        break;
+
+      case player_controls.REWIND:
+        break;
+
+      case player_controls.SKIP:
+        break;
+        
+      default:
+        console.log("Unknown player action");
+    }
   }
 
   renderDashboardHeader() {
@@ -216,8 +298,13 @@ class App extends React.Component {
     } else {
       return (
         <div>
-          <h2 className="Header-Left">Currently Playing</h2>
-          <Player current_song={this.state.current_song} />
+          <h3 className="Header-Left-Compact">Currently Playing</h3>
+          <Player
+            current_song={this.state.current_song}
+            withControls={true}
+            paused={this.state.player_paused}
+            callback={this.playerCallback.bind(this)}
+          />
         </div>
       );
     }
@@ -265,10 +352,6 @@ class App extends React.Component {
     }
   }
 
-  spotifyLogin() {
-    window.location.href = spotify.authorizationUrl;
-  }
-
   render() {
 
     if (!this.state.token) {
@@ -291,7 +374,6 @@ class App extends React.Component {
         return (
           <div className="App">
             {this.renderDashboardHeader()}
-            <br />
             {this.renderQueueWidget()}
             {this.renderMoodWidget()}
           </div>
