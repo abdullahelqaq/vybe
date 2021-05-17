@@ -231,7 +231,7 @@ class App extends React.Component {
 
     this.state = {
 
-      token: "DELETE ME",
+      
 
       active_page: 0,
       current_song: {
