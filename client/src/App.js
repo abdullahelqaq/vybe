@@ -3,6 +3,19 @@ import './App.css';
 import * as spotify from './spotify.js';
 import Slider from '@material-ui/core/Slider';
 
+// Parse URL
+const parsed_url = window.location.href.split("?");
+const params = parsed_url[parsed_url.length - 1];
+const hash = params
+  .split("&")
+  .reduce(function(initial, item) {
+    if (item) {
+      var parts = item.split("=");
+      initial[parts[0]] = decodeURIComponent(parts[1]);
+    }
+    return initial;
+  }, {});
+
 function renderQueueEntries(songs, count=-1) {
   var rows = []
   var limit = songs.length;
@@ -13,7 +26,7 @@ function renderQueueEntries(songs, count=-1) {
 
   for (let i = 0; i < limit; i++) {
     rows.push(
-      <p key={i}><b>{songs[i].name}</b> / {songs[i].artist}</p>
+      <p key={i}><b>{songs[i].track_name}</b> / {songs[i].artist_name}</p>
     );
   }
   return rows;
@@ -85,7 +98,6 @@ class MoodControl extends React.Component {
 
   renderParamSliders(params) {
     var sliders = []
-    console.log(params.length);
     for (let i = 0; i < params.length; i++) {
       sliders.push(
         <div key={i}>
@@ -120,13 +132,27 @@ class MoodControl extends React.Component {
 function Player(props) {
   return (
     <div className="Player">
-      <h1>{props.current_song.name}</h1>
-      <b><p>{props.current_song.artist}</p></b>
+      <h1>{props.current_song.track_name}</h1>
+      <b><p>{props.current_song.artist_name}</p></b>
     </div>
   );
 }
 
 class App extends React.Component {
+
+  componentDidMount() {
+    // figure out how to set token here
+    let _token = hash.code;
+    if (_token) {
+      // Set token & songs
+      this.setState({
+        token: _token
+      });
+
+      spotify.setSongs();
+
+    }
+  }
 
   constructor(props) {
     super(props);
@@ -134,12 +160,12 @@ class App extends React.Component {
     this.state = {
       active_page: 0,
       current_song: {
-        name: "Heat Waves",
-        artist: "Glass Animals"
+        track_name: "Heat Waves",
+        artist_name: "Glass Animals"
       },
       queue: [
-        {name: "Bad Decisions", artist: "The Strokes"},
-        {name: "Shy Away", artist: "Twenty One Pilots"},
+        {track_name: "Bad Decisions", artist_name: "The Strokes"},
+        {track_name: "Shy Away", artist_name: "Twenty One Pilots"},
       ],
       mood: "Dancey",
       mood_params: [
@@ -220,9 +246,11 @@ class App extends React.Component {
     }
   }
 
-  render() {
+  spotifyLogin() {
+    window.location.href = spotify.authorizationUrl;
+  }
 
-    let endpoint = "http://www.google.com";
+  render() {
 
     if (!this.state.token) {
       return (
@@ -232,9 +260,7 @@ class App extends React.Component {
               <h1>vybe</h1>
               <h2>Tunes Tailored to You</h2>
               <br /><br />
-              <form method="GET" action={endpoint} className="Invisible-Form">
-                <input type="submit" className="App-Login-Button" value="LOGIN" />
-              </form>
+              <a href={spotify.authorizationUrl}><button className="App-Login-Button">LOGIN</button></a>
               <br /><br /><br /><br /><br /><br />
             </div>
           </div>

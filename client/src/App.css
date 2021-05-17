@@ -61,7 +61,7 @@ h1 {
   text-align: center;
 }
 
-.Player p {
+.Player h1, p {
   text-align: center;
 }
 
@@ -76,7 +76,7 @@ h1 {
   background-color: #282c34;
   color: white;
   height: 22%;
-  opacity: 85%;
+  opacity: 0.85;
 }
 
 .App-widget h2 {
