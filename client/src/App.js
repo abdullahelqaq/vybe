@@ -220,9 +220,6 @@ class App extends React.Component {
       this.setState({
         token: _token
       });
-
-      spotify.setSeedSongs();
-
     }
   }
 
@@ -285,6 +282,7 @@ class App extends React.Component {
 
       case player_controls.SKIP:
         spotify.skipSong();
+        // spotify.skipSong(current_song.track_id, feedback);
         break;
         
       default:

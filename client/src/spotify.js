@@ -57,9 +57,6 @@ async function authenticate(code) {
   refreshToken = tokens.refresh_token;
   spotify.setAccessToken(accessToken);
 
-  // playSong(['7gHs73wELdeycvS48JfIos', '6ltMvd6CjoydQZ4UzAQaqh', '70YPzqSEwJvAIQ6nMs1cjY']);
-  // playSong(['15JINEqzVMv3SvJTAXAKED', '7FIWs0pqAYbP91WWM0vlTQ', '4xkOaSrkexMciUUogZKVTS']);
-
   console.log("Token retrieved");
   const uploadResponse = await fetch(`http://localhost:3000/token?id=${sessionId}`, {
     method: 'POST',
@@ -85,7 +82,7 @@ export function setSeedSongs() {
     },
     mode: 'cors',
     body: JSON.stringify({
-      songs: [...[currentSong], ...[queue]]
+      songs: [...[currentSong], ...queue]
     }
     )
   });
@@ -119,7 +116,7 @@ export async function checkStatus() {
 
     queue = queueBody.queue;
     preferences = preferencesBody.preferences;
-    return {queue: queue, preferences: preferences};
+    return { queue: queue, preferences: preferences };
   }
 
   return null;
@@ -131,23 +128,27 @@ export function testPopulateQueueSeedSongs() {
     {
       track_name: "Faded",
       artist_name: "Alan Walker",
-      id: "7gHs73wELdeycvS48JfIos"
+      id: "7gHs73wELdeycvS48JfIos",
+      track_id: "7gHs73wELdeycvS48JfIos"
     },
     {
       track_name: "Come & Go",
       artist_name: "Juice WRLD",
-      id: "6ltMvd6CjoydQZ4UzAQaqh"
+      id: "6ltMvd6CjoydQZ4UzAQaqh",
+      track_id: "6ltMvd6CjoydQZ4UzAQaqh"
     },
     {
       track_name: "In Your Arms",
       artist_name: "ILLENIUM",
-      id: "70YPzqSEwJvAIQ6nMs1cjY"
+      id: "70YPzqSEwJvAIQ6nMs1cjY",
+      track_id: "70YPzqSEwJvAIQ6nMs1cjY"
     }
   ];
 
   currentSong = songs[0];
   songs.shift();
   queue = [...songs];
+  playSong(currentSong.track_id);
   setSeedSongs();
 }
 
@@ -156,12 +157,12 @@ export function testPopulateQueueSeedSongs() {
 export function playNextSong() {
   currentSong = queue[0];
   queue.shift();
-  playSong([currentSong.track_id]);
+  playSong(currentSong.track_id);
   // update currentSong and queue in React
 }
 
-export async function playSong(songIds) {
-  return await spotify.play({ uris: songIds.map((songId) => `spotify:track:${songId}`) });
+export async function playSong(songId) {
+  return await spotify.play({ uris: [`spotify:track:${songId}`] });
 }
 
 export async function pauseSong() {
@@ -206,3 +207,11 @@ export async function finishSong(songId) {
 export async function restartSong() {
   return await spotify.seek(0);
 }
+
+document.addEventListener('keydown', function (event) {
+  if (event.key == 'Enter') {
+    // ideally there would be a button in the queue page or some way to fill the queue with
+    // predefined seed songs for demo purposes
+    testPopulateQueueSeedSongs();
+  }
+});

@@ -63,9 +63,10 @@ async function processTracks() {
   const seedSongsFeatures = await getAudioFeatures(seedSongs);
   // add seed songs (except first one because its currently playing) to queue
   for (let i = 1; i < seedSongs.length; i++) {
-    seedSongsFeatures[seedSongs[i].id].track_id = seedSongs[i].id;
-    seedSongsFeatures[seedSongs[i].id].track_name = seedSongs[i].track_name;
-    seedSongsFeatures[seedSongs[i].id].artist_name = seedSongs[i].artist_name;
+    const songId = seedSongs[i].id;
+    seedSongsFeatures[songId].track_id = seedSongs[i].id;
+    seedSongsFeatures[songId].track_name = seedSongs[i].track_name;
+    seedSongsFeatures[songId].artist_name = seedSongs[i].artist_name;
   }
   queue = [...Object.values(seedSongsFeatures)];
   const seedClusters = []
@@ -141,7 +142,8 @@ function getClusterFeatures(data) {
 
 // Skip the song and use user feedback to adjust cluster centers
 async function skipSong(songId, feedback) {
-  songs[songId].played = 1;
+  if (songId in songs)
+    songs[songId].played = 1;
   console.log("Skipping song: " + songs[songId].track_name + ", Feedback: " + feedback);
   adjustClusterCenter(skipSongClusterCentersWeights[feedback], getClusterFeatures(songs[songId]));
   updateQueue(1);
@@ -155,7 +157,8 @@ async function likeSong(songId) {
 
 // Song finished playing
 async function finishSong(songId) {
-  songs[songId].played = 1;
+  if (songId in songs)
+    songs[songId].played = 1;
   console.log("Finished playing song: " + songs[songId].track_name);
   updateQueue(1);
 }
