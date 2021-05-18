@@ -28,7 +28,7 @@ class Session {
     });
   }
 
-  setSongs(songIds) {
+  setSeedSongs(songIds) {
     this.seedSongs = songIds;
     this.worker.postMessage({type: 'seedSongs', data: songIds});
   }
@@ -41,6 +41,10 @@ class Session {
 
   skipSong(songId, feedback) {
     this.worker.postMessage({type: 'skip', data: {id: songId, feedback: feedback}});
+  }
+
+  finishSong(songId) {
+    this.worker.postMessage({type: 'finish', data: {id: songId}});
   }
 }
 

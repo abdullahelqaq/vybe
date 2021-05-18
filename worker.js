@@ -61,7 +61,8 @@ async function processTracks() {
 
   // determine target cluster
   const seedSongsFeatures = await getAudioFeatures(seedSongs);
-  for (let i = 0; i < seedSongs.length; i++) {
+  // add seed songs (except first one because its currently playing) to queue
+  for (let i = 1; i < seedSongs.length; i++) {
     seedSongsFeatures[seedSongs[i].id].track_id = seedSongs[i].id;
     seedSongsFeatures[seedSongs[i].id].track_name = seedSongs[i].track_name;
     seedSongsFeatures[seedSongs[i].id].artist_name = seedSongs[i].artist_name;

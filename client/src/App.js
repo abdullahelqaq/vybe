@@ -221,7 +221,7 @@ class App extends React.Component {
         token: _token
       });
 
-      spotify.setSongs();
+      spotify.setSeedSongs();
 
     }
   }
@@ -269,18 +269,22 @@ class App extends React.Component {
         this.setState({
           player_paused: false
         });
+        spotify.resumeSong();
         break;
 
       case player_controls.PAUSE:
         this.setState({
           player_paused: true
         });
+        spotify.pauseSong();
         break;
 
       case player_controls.REWIND:
+        spotify.restartSong();
         break;
 
       case player_controls.SKIP:
+        spotify.skipSong();
         break;
         
       default:

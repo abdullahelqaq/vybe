@@ -52,7 +52,7 @@ router.get('/dashboard', async (req, res) => {
   res.sendFile(path.resolve(__dirname, './client/build', 'index.html'));
 });
 
-// POST /setSongs
+// POST /token
 // Endpoint called when the access token has been granted to the client
 router.post('/token', (req, res) => {
   const accessToken = req.body.accessToken;
@@ -60,12 +60,12 @@ router.post('/token', (req, res) => {
   userSessions[id].setTokens(accessToken, refreshToken);
 });
 
-// POST /setSongs
+// POST /setSeedSongs
 // Endpoint called when the user manually adds three new songs to their queue
 // Request body must contain the session id and list of song IDs
-router.post('/setSongs', (req, res) => {
+router.post('/setSeedSongs', (req, res) => {
   const id = req.query.id;
-  userSessions[id].setSongs(req.body.songs);
+  userSessions[id].setSeedSongs(req.body.songs);
 });
 
 // POST /skip
@@ -77,6 +77,14 @@ router.post('/skip', (req, res) => {
   const feedback = req.body.feedback;
   userSessions[id].skipSong(songId, feedback);
 });
+
+// POST /finish
+// Endpoint called when the song finishes playing
+router.post('/finish', (req, res) => {
+  const id = req.query.id;
+  userSessions[id].finishSong(songId);
+});
+
 
 // GET /status
 // Endpoint called when user checks for generated queue clustering status

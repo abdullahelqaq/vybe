@@ -1,5 +1,7 @@
 import SpotifyWebApi from 'spotify-web-api-js';
 
+let currentSong, queue;
+
 let sessionId = null;
 const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
@@ -9,7 +11,7 @@ export const authEndpoint = 'https://accounts.spotify.com/authorize';
 const clientId = "62598dfbbefd46eeb90783eb0b6d0ad9";
 const clientSecret = "660c17961ea5435a9efaada516d3f528";
 const redirectUri = "http://localhost:3000/authorized";
-const scopes = ['user-top-read', 'playlist-read-private'];
+const scopes = ['user-top-read', 'playlist-read-private', 'user-modify-playback-state', "streaming", "user-read-email", "user-read-private"];
 
 let accessToken, refreshToken;
 
@@ -44,16 +46,19 @@ async function authenticate(code) {
     },
     mode: 'cors',
     body: new URLSearchParams({
-        'code': code,
-        'redirect_uri': redirectUri,
-        'grant_type': 'authorization_code'
-      }
+      'code': code,
+      'redirect_uri': redirectUri,
+      'grant_type': 'authorization_code'
+    }
     )
   });
   const tokens = await tokenResponse.json();
   accessToken = tokens.access_token;
   refreshToken = tokens.refresh_token;
   spotify.setAccessToken(accessToken);
+
+  playSong(['7gHs73wELdeycvS48JfIos', '6ltMvd6CjoydQZ4UzAQaqh', '70YPzqSEwJvAIQ6nMs1cjY']);
+  // playSong(['15JINEqzVMv3SvJTAXAKED', '7FIWs0pqAYbP91WWM0vlTQ', '4xkOaSrkexMciUUogZKVTS']);
 
   console.log("Token retrieved");
   const uploadResponse = await fetch(`http://localhost:3000/token?id=${sessionId}`, {
@@ -63,41 +68,41 @@ async function authenticate(code) {
     },
     mode: 'cors',
     body: JSON.stringify({
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token
-      }
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token
+    }
     )
   });
 }
 
 // set seed songs
 // TODO: Implement search feature instead of hardcoding three song IDs
-export function setSongs() {
-  const response = fetch(`http://localhost:3000/setSongs?id=${sessionId}`, {
+export function setSeedSongs() {
+  const response = fetch(`http://localhost:3000/setSeedSongs?id=${sessionId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
     mode: 'cors',
     body: JSON.stringify({
-        songs: [
-          {
-            track_name: "Faded",
-            artist_name: "Alan Walker",
-            id: "7gHs73wELdeycvS48JfIos"
-          },
-          {
-            track_name: "Come & Go",
-            artist_name: "Juice WRLD",
-            id: "6ltMvd6CjoydQZ4UzAQaqh"
-          },
-          {
-            track_name: "In Your Arms",
-            artist_name: "ILLENIUM",
-            id: "70YPzqSEwJvAIQ6nMs1cjY"
-          }
-        ]
-      }
+      songs: [
+        {
+          track_name: "Faded",
+          artist_name: "Alan Walker",
+          id: "7gHs73wELdeycvS48JfIos"
+        },
+        {
+          track_name: "Come & Go",
+          artist_name: "Juice WRLD",
+          id: "6ltMvd6CjoydQZ4UzAQaqh"
+        },
+        {
+          track_name: "In Your Arms",
+          artist_name: "ILLENIUM",
+          id: "70YPzqSEwJvAIQ6nMs1cjY"
+        }
+      ]
+    }
     )
   });
   return response;
@@ -108,8 +113,8 @@ export async function checkStatus() {
     method: 'GET',
     mode: 'cors'
   });
-  const statusBody = await tokenResponse.json();
-  
+  const statusBody = await statusResponse.json();
+
   if (statusBody.status == 1) {
     const queueResponse = await fetch(`http://localhost:3000/queue?id=${sessionId}`, {
       method: 'GET',
@@ -132,8 +137,16 @@ export async function checkStatus() {
 
 // SONG CONTROLS
 
-export function playSong(songId) {
-  //play 
+export async function playSong(songIds) {
+  return await spotify.play({ uris: songIds.map((songId) => `spotify:track:${songId}`) });
+}
+
+export async function pauseSong() {
+  return await spotify.pause();
+}
+
+export async function resumeSong() {
+  return await spotify.play();
 }
 
 export function skipSong(songId, feedback) {
@@ -144,29 +157,31 @@ export function skipSong(songId, feedback) {
     },
     mode: 'cors',
     body: JSON.stringify({
-        id: songId,
-        feedback: feedback
-      }
+      id: songId,
+      feedback: feedback
+    }
     )
   });
   return response;
 }
 
-export function finishSong(songId) {
-  const response = fetch(`http://localhost:3000/finish?id=${sessionId}`, {
+export async function finishSong(songId) {
+  const response = await fetch(`http://localhost:3000/finish?id=${sessionId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
     mode: 'cors',
     body: JSON.stringify({
-        id: songId
-      }
+      id: songId
+    }
     )
   });
-  return response;
+  // const nextSong = queue[0];
+  // queue.shift();
+  // playSong(nextSong.track_id);
 }
 
-export function restartSong(songId) {
-  //seek to beginning
+export async function restartSong() {
+  return await player.seek(0);
 }
