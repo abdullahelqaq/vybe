@@ -3,6 +3,7 @@ import SpotifyWebApi from 'spotify-web-api-js';
 let currentSong, queue, preferences;
 
 let sessionId = null;
+let deviceId = null;
 const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
 
@@ -11,8 +12,6 @@ export const authEndpoint = 'https://accounts.spotify.com/authorize';
 const clientId = "62598dfbbefd46eeb90783eb0b6d0ad9";
 const redirectUri = "http://localhost:3000/authorized";
 const scopes = ['user-top-read', 'playlist-read-private', 'user-modify-playback-state', "streaming", "user-read-email", "user-read-private"];
-
-let accessToken;
 
 let spotify = new SpotifyWebApi({
   redirectUri: redirectUri,
@@ -30,7 +29,7 @@ export function checkUrlParams() {
     sessionId = urlParams.get('id');
   }
   if (urlParams.has('token')) {
-    accessToken = urlParams.get('token');
+    spotify.setAccessToken(urlParams.get('token'));
     setInterval(checkStatus, checkServerStatusIntervalMs);
   }
 }
@@ -85,6 +84,10 @@ export async function checkStatus() {
   return null;
 }
 
+export function setDeviceId(id) {
+  deviceId = id;
+}
+
 // for demo purposes - add three seed songs to simulate searching and adding them manually
 export function testPopulateQueueSeedSongs() {
   let songs = [
@@ -125,15 +128,16 @@ export function playNextSong() {
 }
 
 export async function playSong(songId) {
-  return await spotify.play({ uris: [`spotify:track:${songId}`] });
+  console.log("Play Song: " + JSON.stringify({ device_id: deviceId, uris: [`spotify:track:${songId}`] }));
+  return await spotify.play({ device_id: deviceId, uris: [`spotify:track:${songId}`] });
 }
 
 export async function pauseSong() {
-  return await spotify.pause();
+  return await spotify.pause({device_id: deviceId});
 }
 
 export async function resumeSong() {
-  return await spotify.play();
+  return await spotify.play({device_id: deviceId});
 }
 
 export function skipSong(songId, feedback) {

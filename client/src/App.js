@@ -7,6 +7,8 @@ import next_button from './vectors/next-button.svg'
 import rewind_button from './vectors/rewind-button.svg'
 import pause_button from './vectors/pause-button.svg'
 
+import SpotifyPlayer from './player.js';
+
 // Parse URL
 const parsed_url = window.location.href.split("?");
 const params = parsed_url[parsed_url.length - 1];
@@ -375,6 +377,10 @@ class App extends React.Component {
             {this.renderDashboardHeader()}
             {this.renderQueueWidget()}
             {this.renderMoodWidget()}
+            <SpotifyPlayer
+              accessToken={this.state.token}
+              deviceIdCallback={spotify.setDeviceId}
+            />
           </div>
         );
       } else if (this.state.active_page === 1) {
