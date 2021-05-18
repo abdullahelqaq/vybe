@@ -1,6 +1,6 @@
 import SpotifyWebApi from 'spotify-web-api-js';
 
-let currentSong, queue;
+let currentSong, queue, preferences;
 
 let sessionId = null;
 const queryString = window.location.search;
@@ -20,7 +20,7 @@ let spotify = new SpotifyWebApi({
   clientId: clientId
 });
 
-const checkServerStatusIntervalMs = 10000;
+export const checkServerStatusIntervalMs = 10000;
 
 checkUrlParams();
 
@@ -57,7 +57,7 @@ async function authenticate(code) {
   refreshToken = tokens.refresh_token;
   spotify.setAccessToken(accessToken);
 
-  playSong(['7gHs73wELdeycvS48JfIos', '6ltMvd6CjoydQZ4UzAQaqh', '70YPzqSEwJvAIQ6nMs1cjY']);
+  // playSong(['7gHs73wELdeycvS48JfIos', '6ltMvd6CjoydQZ4UzAQaqh', '70YPzqSEwJvAIQ6nMs1cjY']);
   // playSong(['15JINEqzVMv3SvJTAXAKED', '7FIWs0pqAYbP91WWM0vlTQ', '4xkOaSrkexMciUUogZKVTS']);
 
   console.log("Token retrieved");
@@ -85,29 +85,14 @@ export function setSeedSongs() {
     },
     mode: 'cors',
     body: JSON.stringify({
-      songs: [
-        {
-          track_name: "Faded",
-          artist_name: "Alan Walker",
-          id: "7gHs73wELdeycvS48JfIos"
-        },
-        {
-          track_name: "Come & Go",
-          artist_name: "Juice WRLD",
-          id: "6ltMvd6CjoydQZ4UzAQaqh"
-        },
-        {
-          track_name: "In Your Arms",
-          artist_name: "ILLENIUM",
-          id: "70YPzqSEwJvAIQ6nMs1cjY"
-        }
-      ]
+      songs: [...[currentSong], ...[queue]]
     }
     )
   });
   return response;
 }
 
+// checks status and returns queue and preferences if there is an updated one waiting
 export async function checkStatus() {
   const statusResponse = await fetch(`http://localhost:3000/status?id=${sessionId}`, {
     method: 'GET',
@@ -131,11 +116,49 @@ export async function checkStatus() {
     console.log(queueBody.queue);
     console.log("Updated preferences: ");
     console.log(preferencesBody.preferences);
+
+    queue = queueBody.queue;
+    preferences = preferencesBody.preferences;
+    return {queue: queue, preferences: preferences};
   }
+
+  return null;
 }
 
+// for demo purposes - add three seed songs to simulate searching and adding them manually
+export function testPopulateQueueSeedSongs() {
+  let songs = [
+    {
+      track_name: "Faded",
+      artist_name: "Alan Walker",
+      id: "7gHs73wELdeycvS48JfIos"
+    },
+    {
+      track_name: "Come & Go",
+      artist_name: "Juice WRLD",
+      id: "6ltMvd6CjoydQZ4UzAQaqh"
+    },
+    {
+      track_name: "In Your Arms",
+      artist_name: "ILLENIUM",
+      id: "70YPzqSEwJvAIQ6nMs1cjY"
+    }
+  ];
+
+  currentSong = songs[0];
+  songs.shift();
+  queue = [...songs];
+  setSeedSongs();
+}
 
 // SONG CONTROLS
+
+export function playNextSong() {
+  currentSong = queue[0];
+  queue.shift();
+  playSong([currentSong.track_id]);
+  // update currentSong and queue in React
+}
 
 export async function playSong(songIds) {
   return await spotify.play({ uris: songIds.map((songId) => `spotify:track:${songId}`) });
@@ -162,7 +185,7 @@ export function skipSong(songId, feedback) {
     }
     )
   });
-  return response;
+  playNextSong();
 }
 
 export async function finishSong(songId) {
@@ -177,11 +200,9 @@ export async function finishSong(songId) {
     }
     )
   });
-  // const nextSong = queue[0];
-  // queue.shift();
-  // playSong(nextSong.track_id);
+  playNextSong();
 }
 
 export async function restartSong() {
-  return await player.seek(0);
+  return await spotify.seek(0);
 }
