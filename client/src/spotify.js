@@ -9,11 +9,10 @@ const urlParams = new URLSearchParams(queryString);
 export const authEndpoint = 'https://accounts.spotify.com/authorize';
 
 const clientId = "62598dfbbefd46eeb90783eb0b6d0ad9";
-const clientSecret = "660c17961ea5435a9efaada516d3f528";
 const redirectUri = "http://localhost:3000/authorized";
 const scopes = ['user-top-read', 'playlist-read-private', 'user-modify-playback-state', "streaming", "user-read-email", "user-read-private"];
 
-let accessToken, refreshToken;
+let accessToken;
 
 let spotify = new SpotifyWebApi({
   redirectUri: redirectUri,
@@ -30,46 +29,10 @@ export function checkUrlParams() {
   if (urlParams.has('id')) {
     sessionId = urlParams.get('id');
   }
-  if (urlParams.has('code')) {
-    authenticate(urlParams.get('code'));
+  if (urlParams.has('token')) {
+    accessToken = urlParams.get('token');
     setInterval(checkStatus, checkServerStatusIntervalMs);
   }
-}
-
-// Use authorization code to authenticate user
-async function authenticate(code) {
-  console.log("User authorized, retrieving token");
-  const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
-    method: 'POST',
-    headers: {
-      'Authorization': 'Basic ' + Buffer.from(clientId + ':' + clientSecret).toString('base64')
-    },
-    mode: 'cors',
-    body: new URLSearchParams({
-      'code': code,
-      'redirect_uri': redirectUri,
-      'grant_type': 'authorization_code'
-    }
-    )
-  });
-  const tokens = await tokenResponse.json();
-  accessToken = tokens.access_token;
-  refreshToken = tokens.refresh_token;
-  spotify.setAccessToken(accessToken);
-
-  console.log("Token retrieved");
-  const uploadResponse = await fetch(`http://localhost:3000/token?id=${sessionId}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    mode: 'cors',
-    body: JSON.stringify({
-      accessToken: tokens.access_token,
-      refreshToken: tokens.refresh_token
-    }
-    )
-  });
 }
 
 // set seed songs
@@ -207,6 +170,12 @@ export async function finishSong(songId) {
 export async function restartSong() {
   return await spotify.seek(0);
 }
+
+
+// Spotify Web Playback SDK 
+
+
+
 
 document.addEventListener('keydown', function (event) {
   if (event.key == 'Enter') {

@@ -214,7 +214,7 @@ class App extends React.Component {
 
   componentDidMount() {
     // figure out how to set token here
-    let _token = hash.code;
+    let _token = hash.token;
     if (_token) {
       // Set token & songs
       this.setState({
@@ -227,9 +227,6 @@ class App extends React.Component {
     super(props);
 
     this.state = {
-
-      
-
       active_page: 0,
       current_song: {
         track_name: "Heat Waves",
@@ -252,6 +249,7 @@ class App extends React.Component {
       ],
       player_paused: false
     }
+
   }
 
   setActivePage(i) {
@@ -282,7 +280,6 @@ class App extends React.Component {
 
       case player_controls.SKIP:
         spotify.skipSong();
-        // spotify.skipSong(current_song.track_id, feedback);
         break;
         
       default:

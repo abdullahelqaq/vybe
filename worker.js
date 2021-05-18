@@ -23,7 +23,6 @@ let clusters, targetCluster;
 parentPort.on("message", function (msg) {
   switch (msg.type) {
     case 'tokens':
-      console.log(`Access token received`);
       spotify.setAccessToken(msg.data.accessToken);
       break;
     case 'seedSongs':
@@ -144,14 +143,14 @@ function getClusterFeatures(data) {
 async function skipSong(songId, feedback) {
   if (songId in songs)
     songs[songId].played = 1;
-  console.log("Skipping song: " + songs[songId].track_name + ", Feedback: " + feedback);
+  console.log("Skipping song: " + songId + ", Feedback: " + feedback);
   adjustClusterCenter(skipSongClusterCentersWeights[feedback], getClusterFeatures(songs[songId]));
   updateQueue(1);
 }
 
 // Adjust cluster center
 async function likeSong(songId) {
-  console.log("User liked song: " + songs[songId].track_name);
+  console.log("User liked song: " + songId);
   adjustClusterCenter(likeSongClusterCentersWeight, getClusterFeatures(songs[songId]));
 }
 
