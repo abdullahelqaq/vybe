@@ -94,19 +94,16 @@ export function testPopulateQueueSeedSongs() {
     {
       track_name: "Faded",
       artist_name: "Alan Walker",
-      id: "7gHs73wELdeycvS48JfIos",
       track_id: "7gHs73wELdeycvS48JfIos"
     },
     {
       track_name: "Come & Go",
       artist_name: "Juice WRLD",
-      id: "6ltMvd6CjoydQZ4UzAQaqh",
       track_id: "6ltMvd6CjoydQZ4UzAQaqh"
     },
     {
       track_name: "In Your Arms",
       artist_name: "ILLENIUM",
-      id: "70YPzqSEwJvAIQ6nMs1cjY",
       track_id: "70YPzqSEwJvAIQ6nMs1cjY"
     }
   ];

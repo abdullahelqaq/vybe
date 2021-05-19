@@ -61,13 +61,12 @@ async function processTracks() {
   // determine target cluster
   const seedSongsFeatures = await getAudioFeatures(seedSongs);
   // add seed songs (except first one because its currently playing) to queue
-  for (let i = 1; i < seedSongs.length; i++) {
-    const songId = seedSongs[i].id;
-    seedSongsFeatures[songId].track_id = seedSongs[i].id;
+  for (let i = 0; i < seedSongs.length; i++) {
+    const songId = seedSongs[i].track_id;
     seedSongsFeatures[songId].track_name = seedSongs[i].track_name;
     seedSongsFeatures[songId].artist_name = seedSongs[i].artist_name;
   }
-  queue = [...Object.values(seedSongsFeatures)];
+  queue = [...Object.values(seedSongsFeatures).slice(1)];
   const seedClusters = []
   for (const [id, data] of Object.entries(seedSongsFeatures)) {
     testedCluster = clusters.test(getClusterFeatures(data));
@@ -126,10 +125,11 @@ async function retrieveUserTopTracks() {
 async function getAudioFeatures(tracks) {
   let features = {};
   for (let track of tracks) {
-    await spotify.getAudioFeaturesForTrack(track.id)
+    const id = 'id' in track ? track.id : track.track_id;
+    await spotify.getAudioFeaturesForTrack(id)
       .then(function (data) {
-        features[track.id] = data.body;
-        features[track.id].name = track.name;
+        features[id] = data.body;
+        features[id].name = track.name;
       });
   }
   return features;
