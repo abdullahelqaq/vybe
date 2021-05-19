@@ -158,7 +158,7 @@ async function likeSong(songId) {
 async function finishSong(songId) {
   if (songId in songs)
     songs[songId].played = 1;
-  console.log("Finished playing song: " + songs[songId].track_name);
+  console.log("Finished playing song");
   updateQueue(1);
 }
 

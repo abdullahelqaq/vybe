@@ -124,11 +124,11 @@ export function playNextSong() {
   currentSong = queue[0];
   queue.shift();
   playSong(currentSong.track_id);
+  console.log("Playing next song");
   // update currentSong and queue in React
 }
 
 export async function playSong(songId) {
-  console.log("Play Song: " + JSON.stringify({ device_id: deviceId, uris: [`spotify:track:${songId}`] }));
   return await spotify.play({ device_id: deviceId, uris: [`spotify:track:${songId}`] });
 }
 
@@ -141,7 +141,8 @@ export async function resumeSong() {
 }
 
 export function skipSong(songId, feedback) {
-  const response = fetch(`http://localhost:3000/skip?id=${sessionId}`, {
+  console.log("Song skipped");
+  fetch(`http://localhost:3000/skip?id=${sessionId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -156,8 +157,9 @@ export function skipSong(songId, feedback) {
   playNextSong();
 }
 
-export async function finishSong(songId) {
-  const response = await fetch(`http://localhost:3000/finish?id=${sessionId}`, {
+export function finishSong(songId) {
+  console.log("Song finished");
+  fetch(`http://localhost:3000/finish?id=${sessionId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -174,12 +176,6 @@ export async function finishSong(songId) {
 export async function restartSong() {
   return await spotify.seek(0);
 }
-
-
-// Spotify Web Playback SDK 
-
-
-
 
 document.addEventListener('keydown', function (event) {
   if (event.key == 'Enter') {

@@ -380,6 +380,7 @@ class App extends React.Component {
             <SpotifyPlayer
               accessToken={this.state.token}
               deviceIdCallback={spotify.setDeviceId}
+              songFinishedCallback={spotify.finishSong}
             />
           </div>
         );

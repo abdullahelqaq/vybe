@@ -75,7 +75,7 @@ router.post('/skip', (req, res) => {
 // POST /finish
 // Endpoint called when the song finishes playing
 router.post('/finish', (req, res) => {
-  const id = req.query.id;
+  const songId = req.query.id;
   userSessions[id].finishSong(songId);
 });
 
