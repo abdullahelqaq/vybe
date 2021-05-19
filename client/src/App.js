@@ -182,7 +182,8 @@ function Feedback(props) {
               <img
                   className="modal-react"
                   src={good_react}
-                  alt="good"  
+                  alt="good"
+                  onClick={() => props.callback(feedback_options.GOOD)}
               />
             </div>
             <p className="modal-input-desc">Good song but not feeling it right now</p>
@@ -191,7 +192,8 @@ function Feedback(props) {
               <img
                   className="modal-react"
                   src={meh_react}
-                  alt="meh"  
+                  alt="meh"
+                  onClick={() => props.callback(feedback_options.MEH)}
               />
             </div>
             <p className="modal-input-desc">Don’t like the song but it matches the vibe</p>
@@ -200,7 +202,8 @@ function Feedback(props) {
               <img
                   className="modal-react"
                   src={bad_react}
-                  alt="bad"  
+                  alt="bad"
+                  onClick={() => props.callback(feedback_options.BAD)}
               />
             </div>
             <p className="modal-input-desc">Way off</p>
@@ -263,6 +266,12 @@ function Player(props) {
   );
 }
 
+const feedback_options = {
+  GOOD: 0,
+  MEH: 1,
+  BAD: 2
+}
+
 class App extends React.Component {
 
   componentDidMount() {
@@ -281,13 +290,16 @@ class App extends React.Component {
 
     this.state = {
       active_page: 0,
+
+      
       current_song: {
         track_name: "Heat Waves",
-        artist_name: "Glass Animals"
+        artist_name: "Glass Animals",
+        track_id: "7gHs73wELdeycvS48JfIos"
       },
       queue: [
-        {track_name: "Bad Decisions", artist_name: "The Strokes"},
-        {track_name: "Shy Away", artist_name: "Twenty One Pilots"},
+        {track_name: "Bad Decisions", artist_name: "The Strokes", track_id: "7gHs73wELdeycvS48JfIos"},
+        {track_name: "Shy Away", artist_name: "Twenty One Pilots", track_id: "7gHs73wELdeycvS48JfIos"},
       ],
       mood: "Dancey",
       mood_params: [
@@ -300,10 +312,20 @@ class App extends React.Component {
         {name: "Tempo", value: 0.9},
         {name: "Valence", value: 0.4},
       ],
+      
+
       player_paused: false,
       modal_show: false,
     }
 
+    setInterval(() => {
+      var resPromise = spotify.checkStatus().then(res => {
+        console.log("promise done!");
+        if (res) {
+          this.updateNewState(res);
+        }
+      })
+    }, spotify.checkServerStatusIntervalMs);
   }
 
   setActivePage(i) {
@@ -315,6 +337,66 @@ class App extends React.Component {
   setModalShow(val) {
     this.setState({
       modal_show: val,
+    });
+  }
+
+  updateNewState(newStatus) {
+    console.log(newStatus);
+    this.setState({
+      mood_params: newStatus.preferences,
+      current_song: newStatus.queue[0],
+      queue: newStatus.queue.slice(1),
+    });
+
+    var maxIndex = 0;
+    for (let i = 0; i < this.state.mood_params; i++) {
+      if (this.state.mood_params[i].value > this.state.mood_params[maxIndex].value) {
+        maxIndex = i;
+      }
+    }
+
+    var newMood = "";
+    switch (this.state.mood_params[maxIndex].name) {
+      case "Accousticness":
+        newMood = "Accoustic";
+        break;
+      case "Danceability":
+        newMood = "Dancey";
+        break;
+      case "Instrumental":
+      case "Instrumentalness":
+        newMood = "Instrumental";
+        break;
+      case "Energy":
+        newMood = "Energetic";
+        break;
+      case "Loudness":
+        newMood = "Loud";
+        break;
+      case "Speechiness":
+        newMood = "Speechy";
+        break;
+      case "Tempo":
+        newMood = "High-Tempo";
+        break;
+      case "Valence":
+        newMood = "Positive";
+        break;
+      default:
+        newMood = "Balanced";
+    }
+  }
+
+  submitSkipFeedback(feedback) {
+    this.setModalShow(false);
+    spotify.skipSong(this.state.current_song.track_id, feedback);
+    
+    // update state
+    console.log(spotify.checkStatus());
+    var newStatus = spotify.checkStatus().then(res => {
+      if (res) {
+        this.updateNewState(res);
+      }
     });
   }
 
@@ -339,8 +421,7 @@ class App extends React.Component {
         break;
 
       case player_controls.SKIP:
-      this.setModalShow(true);  
-      spotify.skipSong();
+        this.setModalShow(true);
         break;
         
       default:
@@ -438,7 +519,11 @@ class App extends React.Component {
             {this.renderMoodWidget()}
 
             <>
-              <Feedback show={this.state.modal_show} onHide={this.setModalShow.bind(this)} />
+              <Feedback
+                show={this.state.modal_show}
+                onHide={this.setModalShow.bind(this)}
+                callback={this.submitSkipFeedback.bind(this)}
+              />
             </>
 
             <SpotifyPlayer
