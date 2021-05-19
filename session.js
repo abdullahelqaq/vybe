@@ -18,19 +18,26 @@ class Session {
 
     // background worker init
     this.worker = new Worker('./worker.js');
-    this.worker.on('message', function (msg) {
-      switch (msg.type) {
-        case 'queue':
-          this.queue = msg.data;
-          break;
-        case 'preferences':
-          this.preferences = msg.data;
-          break;
-        case 'status':
-          this.status = msg.data;
-          break;
-      }
-    });
+    this.worker.on('message', this.processWorkerUpdate.bind(this));
+  }
+
+  processWorkerUpdate(msg) {
+    switch (msg.type) {
+      case 'queue':
+        this.queue = msg.data;
+        console.log("Updated Queue: ");
+        console.log(this.queue);
+        break;
+      case 'preferences':
+        this.preferences = msg.data;
+        console.log("Updated Preferences: ");
+        console.log(this.preferences);
+        break;
+      case 'status':
+        console.log("Session status update to " + msg.data);
+        this.status = msg.data;
+        break;
+    }
   }
 
   // Use authorization code to authenticate user

@@ -10,9 +10,9 @@ const queueSize = 10;
 const topSongsPlaylistYears = ['2020']
 const audioFeatures = ['Valence', 'Energy', 'Danceability', 'Acousticness', 'Loudness', 'Instrumentalness', 'Liveness', 'Speechiness'];
 
-const skipSongClusterCentersWeights = [-0.01, -0.025, -0.05];
-const likeSongClusterCentersWeight = 0.03;
-const finishSongClusterCentersWeight = 0.015;
+const skipSongClusterCentersWeights = [-0.1, -0.25, -0.5];
+const likeSongClusterCentersWeight = 0.3;
+const finishSongClusterCentersWeight = 0.15;
 
 let songs, queue = [];
 let spotify = new SpotifyWebApi();
@@ -65,6 +65,7 @@ async function processTracks() {
     const songId = seedSongs[i].track_id;
     seedSongsFeatures[songId].track_name = seedSongs[i].track_name;
     seedSongsFeatures[songId].artist_name = seedSongs[i].artist_name;
+    seedSongsFeatures[songId].track_id = seedSongs[i].track_id;
   }
   queue = [...Object.values(seedSongsFeatures).slice(1)];
   const seedClusters = []
@@ -81,9 +82,9 @@ async function processTracks() {
 
 // Adjust the target cluster center using a specified weight
 async function adjustClusterCenter(weight, features) {
-  const offset = features.map(x => x * weight);
+  const newCentroid = features.map((x, i) => targetCluster.centroid[i] + ((targetCluster.centroid[i] - x) * weight));
   // clamp value
-  targetCluster.centroid = (targetCluster.centroid + offset).map(x => Math.min(Math.max(x, 0), 1));
+  targetCluster.centroid = newCentroid.map(x => Math.min(Math.max(x, 0), 1));
   clusters[targetCluster.idx] = targetCluster;
 }
 
@@ -141,17 +142,24 @@ function getClusterFeatures(data) {
 
 // Skip the song and use user feedback to adjust cluster centers
 async function skipSong(songId, feedback) {
-  if (songId in songs)
+  let features = targetCluster.centroid;
+  if (songId in songs) {
     songs[songId].played = 1;
+    features = getClusterFeatures(songs[songId]);
+  }
   console.log("Skipping song: " + songId + ", Feedback: " + feedback);
-  adjustClusterCenter(skipSongClusterCentersWeights[feedback], getClusterFeatures(songs[songId]));
+  adjustClusterCenter(skipSongClusterCentersWeights[feedback], features);
   updateQueue(1);
 }
 
 // Adjust cluster center
 async function likeSong(songId) {
+  let features = targetCluster.centroid;
+  if (songId in songs) {
+    features = getClusterFeatures(songs[songId]);
+  }
   console.log("User liked song: " + songId);
-  adjustClusterCenter(likeSongClusterCentersWeight, getClusterFeatures(songs[songId]));
+  adjustClusterCenter(likeSongClusterCentersWeight, features);
 }
 
 // Song finished playing
@@ -189,11 +197,6 @@ function updateQueue(n) {
   for (const [name, values] of Object.entries(totalPreferences)) {
     preferences.push({name: name, value: values.reduce((a, b) => a + b) / values.length})
   }
-
-  console.log("Updated Queue: ");
-  console.log(queue);
-  console.log("Updated Preferences: ");
-  console.log(preferences);
 
   parentPort.postMessage({ type: 'queue', data: queue });
   parentPort.postMessage({ type: 'preferences', data: preferences });

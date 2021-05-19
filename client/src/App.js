@@ -17,7 +17,7 @@ const parsed_url = window.location.href.split("?");
 const params = parsed_url[parsed_url.length - 1];
 const hash = params
   .split("&")
-  .reduce(function(initial, item) {
+  .reduce(function (initial, item) {
     if (item) {
       var parts = item.split("=");
       initial[parts[0]] = decodeURIComponent(parts[1]);
@@ -25,7 +25,7 @@ const hash = params
     return initial;
   }, {});
 
-function renderQueueEntries(songs, count=-1) {
+function renderQueueEntries(songs, count = -1) {
   var rows = []
   var limit = songs.length;
 
@@ -132,7 +132,7 @@ class MoodControl extends React.Component {
           <Slider
             disabled
             orientation="vertical"
-            style={{height: "50px", color: "white", display: "table", margin: "0 auto"}}
+            style={{ height: "50px", color: "white", display: "table", margin: "0 auto" }}
             max={1}
             value={params[i].value}
           />
@@ -142,7 +142,7 @@ class MoodControl extends React.Component {
     return sliders;
   }
 
-  render () {
+  render() {
     return (
       <div className="Queue" onClick={() => this.props.onClick()}>
         <h2 className="Header-Left">{this.props.mood}</h2>
@@ -151,7 +151,7 @@ class MoodControl extends React.Component {
         </div>
       </div>
     );
-    
+
   }
 }
 
@@ -178,30 +178,30 @@ function Feedback(props) {
           <div className="modal-input">
             <div className="Player-Button-Wrapper">
               <img
-                  className="modal-react"
-                  src={good_react}
-                  alt="good"
-                  onClick={() => props.callback(feedback_options.GOOD)}
+                className="modal-react"
+                src={good_react}
+                alt="good"
+                onClick={() => props.callback(feedback_options.GOOD)}
               />
             </div>
             <p className="modal-input-desc">Good song but not feeling it right now</p>
-            
+
             <div className="Player-Button-Wrapper">
               <img
-                  className="modal-react"
-                  src={meh_react}
-                  alt="meh"
-                  onClick={() => props.callback(feedback_options.MEH)}
+                className="modal-react"
+                src={meh_react}
+                alt="meh"
+                onClick={() => props.callback(feedback_options.MEH)}
               />
             </div>
             <p className="modal-input-desc">Don’t like the song but it matches the vibe</p>
-            
+
             <div className="Player-Button-Wrapper">
               <img
-                  className="modal-react"
-                  src={bad_react}
-                  alt="bad"
-                  onClick={() => props.callback(feedback_options.BAD)}
+                className="modal-react"
+                src={bad_react}
+                alt="bad"
+                onClick={() => props.callback(feedback_options.BAD)}
               />
             </div>
             <p className="modal-input-desc">Way off</p>
@@ -235,7 +235,7 @@ function Player(props) {
                   className="Player-Button-Big"
                   src={play_button}
                   onClick={() => props.callback(player_controls.PLAY)}
-                  alt="play"  
+                  alt="play"
                 />
               </div>
             )}
@@ -245,7 +245,7 @@ function Player(props) {
                   className="Player-Button-Big"
                   src={pause_button}
                   onClick={() => props.callback(player_controls.PAUSE)}
-                  alt="pause"  
+                  alt="pause"
                 />
               </div>
             )}
@@ -289,43 +289,59 @@ class App extends React.Component {
     this.state = {
       active_page: 0,
 
-      
+
       current_song: {
-        track_name: "Heat Waves",
-        artist_name: "Glass Animals",
-        track_id: "0bf2XtxP5RsUYqWdsjk58H"
+        // track_name: "Heat Waves",
+        // artist_name: "Glass Animals",
+        // track_id: "0bf2XtxP5RsUYqWdsjk58H"
       },
       queue: [
-        {track_name: "Bad Decisions", artist_name: "The Strokes", track_id: "0bf2XtxP5RsUYqWdsjk58H"},
-        {track_name: "Shy Away", artist_name: "Twenty One Pilots", track_id: "0bf2XtxP5RsUYqWdsjk58H"},
+        // {track_name: "Bad Decisions", artist_name: "The Strokes", track_id: "0bf2XtxP5RsUYqWdsjk58H"},
+        // {track_name: "Shy Away", artist_name: "Twenty One Pilots", track_id: "0bf2XtxP5RsUYqWdsjk58H"},
       ],
       mood: "Dancey",
       mood_params: [
-        {name: "Accousticness", value: 0.9},
-        {name: "Danceability", value: 0.2},
-        {name: "Instrumental", value: 0.3},
-        {name: "Energy", value: 0.8},
-        {name: "Loudness", value: 0.7},
-        {name: "Speechiness", value: 0.2},
-        {name: "Tempo", value: 0.9},
-        {name: "Valence", value: 0.4},
+        { name: "Accousticness", value: 0.9 },
+        { name: "Danceability", value: 0.2 },
+        { name: "Instrumental", value: 0.3 },
+        { name: "Energy", value: 0.8 },
+        { name: "Loudness", value: 0.7 },
+        { name: "Speechiness", value: 0.2 },
+        { name: "Tempo", value: 0.9 },
+        { name: "Valence", value: 0.4 },
       ],
-      
 
+
+      player_loaded: false,
       player_paused: false,
       modal_show: false,
     }
 
-    setInterval(() => {
-      var resPromise = spotify.checkStatus();
-      
-      resPromise.then(res => {
-        console.log("promise done!");
+    setInterval(async () => {
+      spotify.checkStatus().then(res => {
         if (res) {
           this.updateNewState(res);
         }
       })
     }, spotify.checkServerStatusIntervalMs);
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key == 'Enter') {
+        if (this.state.active_page === 1) {
+          console.log("Setting seed songs");
+          const seedSongs = spotify.testPopulateQueueSeedSongs();
+          this.state.current_song = seedSongs.queue[0];
+          this.state.queue = seedSongs.queue.slice(1);
+        }
+      }
+    }.bind(this));
+  }
+
+  setPlayerLoaded(device_id) {
+    this.setState({
+      player_loaded: true,
+    });
+    spotify.setDeviceId(device_id);
   }
 
   setActivePage(i) {
@@ -344,8 +360,7 @@ class App extends React.Component {
     console.log(newStatus);
     this.setState({
       mood_params: newStatus.preferences,
-      current_song: newStatus.queue[0],
-      queue: newStatus.queue.slice(1),
+      queue: newStatus.queue,
     });
 
     var maxIndex = 0;
@@ -389,17 +404,17 @@ class App extends React.Component {
 
   submitSkipFeedback(feedback) {
     this.setModalShow(false);
-    spotify.skipSong(this.state.current_song.track_id, feedback);
-    
-    // update state
-    console.log(spotify.checkStatus());
-    var newStatus = spotify.checkStatus();
-    
-    newStatus.then(res => {
-      if (res) {
-        this.updateNewState(res);
-      }
-    });
+    const [newCurrentSong, newQueue] = spotify.skipSong(this.state.current_song.track_id, feedback);
+
+    this.state.current_song = newCurrentSong;
+    this.state.queue = newQueue;
+  }
+
+  songFinished() {
+    const [newCurrentSong, newQueue] = spotify.finishSong(this.state.current_song.track_id);
+
+    this.state.current_song = newCurrentSong;
+    this.state.queue = newQueue;
   }
 
   playerCallback(action) {
@@ -425,7 +440,7 @@ class App extends React.Component {
       case player_controls.SKIP:
         this.setModalShow(true);
         break;
-        
+
       default:
         console.log("Unknown player action");
     }
@@ -460,17 +475,17 @@ class App extends React.Component {
   renderQueueWidget() {
     if (this.state.queue.length > 0) {
       return (
-      <div className="App-widget" onClick={() => this.setActivePage(1)}>
-        <h2>Queue</h2>
-        {renderQueueEntries(this.state.queue, 5)}
-      </div>
+        <div className="App-widget" onClick={() => this.setActivePage(1)}>
+          <h2>Queue</h2>
+          {renderQueueEntries(this.state.queue, 5)}
+        </div>
       );
     } else {
       return (
-      <div className="App-widget" onClick={() => this.setActivePage(1)}>
-        <h2>Queue</h2>
-        <h3>Tap to Add Songs</h3>
-      </div>
+        <div className="App-widget" onClick={() => this.setActivePage(1)}>
+          <h2>Queue</h2>
+          <h3>Tap to Add Songs</h3>
+        </div>
       );
     }
   }
@@ -530,31 +545,32 @@ class App extends React.Component {
 
             <SpotifyPlayer
               accessToken={this.state.token}
-              deviceIdCallback={spotify.setDeviceId}
-              songFinishedCallback={spotify.finishSong}
+              songFinishedCallback={this.songFinished.bind(this)}
+              playerLoadedCallback={this.setPlayerLoaded.bind(this)}
+              playerLoaded={this.state.player_loaded}
             />
           </div>
         );
       } else if (this.state.active_page === 1) {
         return (
-        <div className="App">
-          <Queue
-            onClick={this.returnToDashboard.bind(this)}
-            current_song={this.state.current_song}
-            queue={this.state.queue}
-          />
-        </div>
+          <div className="App">
+            <Queue
+              onClick={this.returnToDashboard.bind(this)}
+              current_song={this.state.current_song}
+              queue={this.state.queue}
+            />
+          </div>
         );
-  
+
       } else if (this.state.active_page === 2) {
         return (
-        <div className="App">
-          <MoodControl
-            onClick={this.returnToDashboard.bind(this)}
-            mood={this.state.mood}
-            params={this.state.mood_params}
-          />
-        </div>
+          <div className="App">
+            <MoodControl
+              onClick={this.returnToDashboard.bind(this)}
+              mood={this.state.mood}
+              params={this.state.mood_params}
+            />
+          </div>
         );
       }
       else {

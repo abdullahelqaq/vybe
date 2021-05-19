@@ -91,7 +91,7 @@ router.post('/finish', (req, res) => {
 router.get('/status', (req, res) => {
   const id = req.query.id;
   if (id in userSessions)
-    res.body = JSON.stringify({ status: userSessions[id].status });
+    res.json({ status: userSessions[id].status });
 });
 
 // GET /queue
@@ -101,7 +101,7 @@ router.get('/status', (req, res) => {
 router.get('/queue', (req, res) => {
   const id = req.query.id;
   if (id in userSessions) {
-    res.body = JSON.stringify({ queue: userSessions[id].queue });
+    res.json({ queue: userSessions[id].queue });
     userSessions[id].status = 0;
   }
 });
@@ -112,9 +112,10 @@ router.get('/queue', (req, res) => {
 // Response body contains preferences
 router.get('/preferences', (req, res) => {
   const id = req.query.id;
-  res.body = JSON.stringify({ preferences: userSessions[id].preferences });
-  if (id in userSessions)
+  if (id in userSessions) {
+    res.json({ preferences: userSessions[id].preferences });
     userSessions[id].status = 0;
+  }
 });
 
 

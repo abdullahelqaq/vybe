@@ -18,7 +18,7 @@ let spotify = new SpotifyWebApi({
   clientId: clientId
 });
 
-export const checkServerStatusIntervalMs = 10000;
+export const checkServerStatusIntervalMs = 5000;
 
 checkUrlParams();
 
@@ -112,6 +112,8 @@ export function testPopulateQueueSeedSongs() {
   queue = [...songs];
   playSong(currentSong.track_id);
   setSeedSongs();
+
+  return { queue: [...[currentSong], ...queue], preferences: null };
 }
 
 // SONG CONTROLS
@@ -121,7 +123,8 @@ export function playNextSong() {
   queue.shift();
   playSong(currentSong.track_id);
   console.log("Playing next song");
-  // update currentSong and queue in React
+  
+  return [currentSong, queue]
 }
 
 export async function playSong(songId) {
@@ -150,7 +153,7 @@ export function skipSong(songId, feedback) {
     }
     )
   });
-  playNextSong();
+  return playNextSong();
 }
 
 export function finishSong(songId) {
@@ -166,17 +169,9 @@ export function finishSong(songId) {
     }
     )
   });
-  playNextSong();
+  return playNextSong();
 }
 
 export async function restartSong() {
   return await spotify.seek(0);
 }
-
-document.addEventListener('keydown', function (event) {
-  if (event.key == 'Enter') {
-    // ideally there would be a button in the queue page or some way to fill the queue with
-    // predefined seed songs for demo purposes
-    testPopulateQueueSeedSongs();
-  }
-});

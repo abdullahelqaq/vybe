@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ScriptCache } from "./ScriptCache.js";
 
 export default class SpotifyPlayer extends React.Component {
@@ -6,17 +6,22 @@ export default class SpotifyPlayer extends React.Component {
     super(props);
 
     this.state = {
-      deviceIdCallback: props.deviceIdCallback,
       songFinishedCallback: props.songFinishedCallback,
+      playerLoadedCallback: props.playerLoadedCallback,
+      playerLoaded: props.playerLoaded,
       token: props.accessToken
     };
+  }
 
-    new ScriptCache([
-      {
-        name: "https://sdk.scdn.co/spotify-player.js",
-        callback: this.spotifySDKCallback.bind(this)
-      }
-    ]);
+  componentDidMount() {
+    if (!this.state.playerLoaded) {
+      new ScriptCache([
+        {
+          name: "https://sdk.scdn.co/spotify-player.js",
+          callback: this.spotifySDKCallback.bind(this)
+        }
+      ]);
+    }
   }
 
   spotifySDKCallback() {
@@ -28,15 +33,15 @@ export default class SpotifyPlayer extends React.Component {
       this.setState({ player: player })
 
       player.addListener('ready', ({ device_id }) => {
-        console.log(`Device ID: ${device_id}`);
         this.setState({
           player: player
         });
-        this.state.deviceIdCallback(device_id);
+        console.log(`Device ID: ${device_id}`);
+        this.state.playerLoadedCallback(device_id);
       });
 
       await player.connect();
-      
+
       setInterval(this.checkPosition.bind(this), 1000);
     }
   }
