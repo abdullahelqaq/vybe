@@ -10,6 +10,8 @@ import good_react from './vectors/good.svg'
 import meh_react from './vectors/meh.svg'
 import bad_react from './vectors/bad.svg'
 
+import SpotifyPlayer from './player.js';
+
 // Parse URL
 const parsed_url = window.location.href.split("?");
 const params = parsed_url[parsed_url.length - 1];
@@ -265,15 +267,12 @@ class App extends React.Component {
 
   componentDidMount() {
     // figure out how to set token here
-    let _token = hash.code;
+    let _token = hash.token;
     if (_token) {
       // Set token & songs
       this.setState({
         token: _token
       });
-
-      spotify.setSeedSongs();
-
     }
   }
 
@@ -281,9 +280,6 @@ class App extends React.Component {
     super(props);
 
     this.state = {
-
-      //token: "DELETEME",
-
       active_page: 0,
       current_song: {
         track_name: "Heat Waves",
@@ -307,6 +303,7 @@ class App extends React.Component {
       player_paused: false,
       modal_show: false,
     }
+
   }
 
   setActivePage(i) {
@@ -444,6 +441,11 @@ class App extends React.Component {
               <Feedback show={this.state.modal_show} onHide={this.setModalShow.bind(this)} />
             </>
 
+            <SpotifyPlayer
+              accessToken={this.state.token}
+              deviceIdCallback={spotify.setDeviceId}
+              songFinishedCallback={spotify.finishSong}
+            />
           </div>
         );
       } else if (this.state.active_page === 1) {

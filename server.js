@@ -37,7 +37,9 @@ router.get('/authorized', async (req, res) => {
   id = uuidv4();
   userSessions[id] = new Session(id);
   console.log(`User authorized - Session id: ${id}`);
-  res.redirect(`/dashboard?id=${id}&code=${code}`);
+  await userSessions[id].authenticate(code);
+  const token = userSessions[id].accessToken;
+  res.redirect(`/dashboard?id=${id}&token=${token}`);
 });
 
 // GET /dashboard
@@ -50,14 +52,6 @@ router.get('/dashboard', async (req, res) => {
     return;
   }
   res.sendFile(path.resolve(__dirname, './client/build', 'index.html'));
-});
-
-// POST /token
-// Endpoint called when the access token has been granted to the client
-router.post('/token', (req, res) => {
-  const accessToken = req.body.accessToken;
-  const refreshToken = req.body.refreshToken;
-  userSessions[id].setTokens(accessToken, refreshToken);
 });
 
 // POST /setSeedSongs
@@ -81,7 +75,7 @@ router.post('/skip', (req, res) => {
 // POST /finish
 // Endpoint called when the song finishes playing
 router.post('/finish', (req, res) => {
-  const id = req.query.id;
+  const songId = req.query.id;
   userSessions[id].finishSong(songId);
 });
 
