@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './App.css';
 import * as spotify from './spotify.js';
 import Slider from '@material-ui/core/Slider';
@@ -6,6 +6,9 @@ import play_button from './vectors/play-button.svg'
 import next_button from './vectors/next-button.svg'
 import rewind_button from './vectors/rewind-button.svg'
 import pause_button from './vectors/pause-button.svg'
+import good_react from './vectors/good.svg'
+import meh_react from './vectors/meh.svg'
+import bad_react from './vectors/bad.svg'
 
 // Parse URL
 const parsed_url = window.location.href.split("?");
@@ -159,6 +162,54 @@ const player_controls = {
   SKIP: 3
 }
 
+function Feedback(props) {
+
+  if (!props.show) {
+    return null;
+  }
+
+  return (
+    <div className="modal">
+      <div className="modal-content">
+        <center>
+          <h1>Feedback</h1>
+          <h4>Letting us know why you skipped the song will help us improve your suggestions!</h4>
+          <br /><br /><br />
+          <div className="modal-input">
+            <div className="Player-Button-Wrapper">
+              <img
+                  className="modal-react"
+                  src={good_react}
+                  alt="good"  
+              />
+            </div>
+            <p className="modal-input-desc">Good song but not feeling it right now</p>
+            
+            <div className="Player-Button-Wrapper">
+              <img
+                  className="modal-react"
+                  src={meh_react}
+                  alt="meh"  
+              />
+            </div>
+            <p className="modal-input-desc">Don’t like the song but it matches the vibe</p>
+            
+            <div className="Player-Button-Wrapper">
+              <img
+                  className="modal-react"
+                  src={bad_react}
+                  alt="bad"  
+              />
+            </div>
+            <p className="modal-input-desc">Way off</p>
+          </div>
+        </center>
+        <button onClick={() => props.onHide(false)}>Close</button>
+      </div>
+    </div>
+  );
+}
+
 function Player(props) {
   return (
     <div className="Player">
@@ -231,7 +282,7 @@ class App extends React.Component {
 
     this.state = {
 
-      
+      //token: "DELETEME",
 
       active_page: 0,
       current_song: {
@@ -253,7 +304,8 @@ class App extends React.Component {
         {name: "Tempo", value: 0.9},
         {name: "Valence", value: 0.4},
       ],
-      player_paused: false
+      player_paused: false,
+      modal_show: false,
     }
   }
 
@@ -261,6 +313,12 @@ class App extends React.Component {
     this.setState({
       active_page: i,
     })
+  }
+
+  setModalShow(val) {
+    this.setState({
+      modal_show: val,
+    });
   }
 
   playerCallback(action) {
@@ -284,7 +342,8 @@ class App extends React.Component {
         break;
 
       case player_controls.SKIP:
-        spotify.skipSong();
+      this.setModalShow(true);  
+      spotify.skipSong();
         break;
         
       default:
@@ -380,6 +439,11 @@ class App extends React.Component {
             {this.renderDashboardHeader()}
             {this.renderQueueWidget()}
             {this.renderMoodWidget()}
+
+            <>
+              <Feedback show={this.state.modal_show} onHide={this.setModalShow.bind(this)} />
+            </>
+
           </div>
         );
       } else if (this.state.active_page === 1) {
@@ -410,8 +474,6 @@ class App extends React.Component {
         );
       }
     }
-
-
   }
 }
 

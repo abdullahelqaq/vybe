@@ -65,6 +65,43 @@ h1 {
   text-align: center;
 }
 
+.modal {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.modal-react {
+  width: 85px;
+  height: 85px;
+}
+
+.modal-content {
+  width: 80%;
+  height: 85%;
+  border-radius: 25px;
+  padding: 10px;
+  background-color: #282C34;
+}
+
+.modal-input {
+  display: grid;
+  grid-row-gap: 50px;
+  grid-template-columns: auto auto auto;
+  width: 90%;
+}
+
+.modal-input-desc {
+  grid-column-start: span 2;
+}
+
 .Player h1, p {
   text-align: center;
 }
