@@ -30,7 +30,6 @@ export function checkUrlParams() {
   }
   if (urlParams.has('token')) {
     spotify.setAccessToken(urlParams.get('token'));
-    setInterval(checkStatus, checkServerStatusIntervalMs);
   }
 }
 

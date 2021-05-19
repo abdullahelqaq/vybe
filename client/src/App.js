@@ -74,9 +74,7 @@ class Queue extends React.Component {
   }
 
   checkExitClick() {
-    console.log("here");
     if (!this.state.input_active) {
-      console.log("leaving");
       this.props.onClick();
     } else {
       this.setState({
@@ -295,11 +293,11 @@ class App extends React.Component {
       current_song: {
         track_name: "Heat Waves",
         artist_name: "Glass Animals",
-        track_id: "7gHs73wELdeycvS48JfIos"
+        track_id: "0bf2XtxP5RsUYqWdsjk58H"
       },
       queue: [
-        {track_name: "Bad Decisions", artist_name: "The Strokes", track_id: "7gHs73wELdeycvS48JfIos"},
-        {track_name: "Shy Away", artist_name: "Twenty One Pilots", track_id: "7gHs73wELdeycvS48JfIos"},
+        {track_name: "Bad Decisions", artist_name: "The Strokes", track_id: "0bf2XtxP5RsUYqWdsjk58H"},
+        {track_name: "Shy Away", artist_name: "Twenty One Pilots", track_id: "0bf2XtxP5RsUYqWdsjk58H"},
       ],
       mood: "Dancey",
       mood_params: [
@@ -319,7 +317,9 @@ class App extends React.Component {
     }
 
     setInterval(() => {
-      var resPromise = spotify.checkStatus().then(res => {
+      var resPromise = spotify.checkStatus();
+      
+      resPromise.then(res => {
         console.log("promise done!");
         if (res) {
           this.updateNewState(res);
@@ -393,7 +393,9 @@ class App extends React.Component {
     
     // update state
     console.log(spotify.checkStatus());
-    var newStatus = spotify.checkStatus().then(res => {
+    var newStatus = spotify.checkStatus();
+    
+    newStatus.then(res => {
       if (res) {
         this.updateNewState(res);
       }
