@@ -137,12 +137,17 @@ h1 {
 
 .App-widget {
   margin: 20px;
-  padding: 5px 15px 15px 15px;
+  padding: 5px 15px 20px 15px;
   border-radius: 15px;
   background-color: #282c34;
   color: white;
-  height: 22%;
+  
   opacity: 0.85;
+}
+
+.App-widget-wrapper {
+  width: calc(100vw - 80px);
+  margin: auto;
 }
 
 .App-widget h2 {

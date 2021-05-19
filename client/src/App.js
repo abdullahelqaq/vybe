@@ -210,7 +210,6 @@ function Feedback(props) {
             <p className="modal-input-desc">Way off</p>
           </div>
         </center>
-        <button onClick={() => props.onHide(false)}>Close</button>
       </div>
     </div>
   );
@@ -291,10 +290,10 @@ class App extends React.Component {
 
     this.state = {
       active_page: 0,
-
-
       current_song: {},
       queue: [],
+
+      /*
       mood: "Dancey",
       mood_params: [
         { name: "Accousticness", value: 0.9 },
@@ -306,6 +305,7 @@ class App extends React.Component {
         { name: "Tempo", value: 0.9 },
         { name: "Valence", value: 0.4 },
       ],
+      */
 
       current_song_liked: false,
 
@@ -370,7 +370,7 @@ class App extends React.Component {
     });
 
     var maxIndex = 0;
-    for (let i = 0; i < this.state.mood_params; i++) {
+    for (let i = 0; i < this.state.mood_params.length; i++) {
       if (this.state.mood_params[i].value > this.state.mood_params[maxIndex].value) {
         maxIndex = i;
       }
@@ -406,6 +406,9 @@ class App extends React.Component {
       default:
         newMood = "Balanced";
     }
+    this.setState({
+      mood: newMood
+    });
   }
 
   submitSkipFeedback(feedback) {
@@ -501,7 +504,11 @@ class App extends React.Component {
       return (
         <div className="App-widget" onClick={() => this.setActivePage(1)}>
           <h2>Queue</h2>
-          {renderQueueEntries(this.state.queue, 5)}
+          <center>
+            <div className="App-widget-wrapper">
+              {renderQueueEntries(this.state.queue, 5)}
+            </div>
+          </center>
         </div>
       );
     } else {
