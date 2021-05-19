@@ -217,9 +217,11 @@ async function loadDatabase() {
       .pipe(csv())
       .on('data', (data) => {
         for (key in data) {
-          const parsed = parseFloat(data[key]);
-          if (!isNaN(parsed))
-            data[key] = parsed;
+          if (! (["artist_name", "track_name", "track_id"].includes(key))) {
+            const parsed = parseFloat(data[key]);
+            if (!isNaN(parsed))
+              data[key] = parsed;
+          }
         }
         rows[data.track_id] = data;
       })
