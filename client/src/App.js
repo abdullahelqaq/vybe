@@ -9,6 +9,8 @@ import pause_button from './vectors/pause-button.svg'
 import good_react from './vectors/good.svg'
 import meh_react from './vectors/meh.svg'
 import bad_react from './vectors/bad.svg'
+import heart_empty from './vectors/heart-empty.svg'
+import heart_full from './vectors/heart-full.svg'
 
 import SpotifyPlayer from './player.js';
 
@@ -159,7 +161,8 @@ const player_controls = {
   PLAY: 0,
   PAUSE: 1,
   REWIND: 2,
-  SKIP: 3
+  SKIP: 3,
+  LIKE: 4
 }
 
 function Feedback(props) {
@@ -290,15 +293,8 @@ class App extends React.Component {
       active_page: 0,
 
 
-      current_song: {
-        // track_name: "Heat Waves",
-        // artist_name: "Glass Animals",
-        // track_id: "0bf2XtxP5RsUYqWdsjk58H"
-      },
-      queue: [
-        // {track_name: "Bad Decisions", artist_name: "The Strokes", track_id: "0bf2XtxP5RsUYqWdsjk58H"},
-        // {track_name: "Shy Away", artist_name: "Twenty One Pilots", track_id: "0bf2XtxP5RsUYqWdsjk58H"},
-      ],
+      current_song: {},
+      queue: [],
       mood: "Dancey",
       mood_params: [
         { name: "Accousticness", value: 0.9 },
@@ -311,13 +307,14 @@ class App extends React.Component {
         { name: "Valence", value: 0.4 },
       ],
 
+      current_song_liked: false,
 
       player_loaded: false,
       player_paused: false,
       modal_show: false,
     }
 
-    setInterval(async () => {
+    setInterval(() => {
       spotify.checkStatus().then(res => {
         if (res) {
           this.updateNewState(res);
@@ -330,8 +327,18 @@ class App extends React.Component {
         if (this.state.active_page === 1) {
           console.log("Setting seed songs");
           const seedSongs = spotify.testPopulateQueueSeedSongs();
-          this.state.current_song = seedSongs.queue[0];
-          this.state.queue = seedSongs.queue.slice(1);
+          this.setState({
+            current_song: seedSongs.queue[0],
+            queue: seedSongs.queue.slice(1)
+          });
+        }
+      }
+      else if (event.key == 'l') {
+        if (this.state.current_song_liked) {
+          this.setSongUnliked();
+        }
+        else {
+          this.setSongLiked();
         }
       }
     }.bind(this));
@@ -357,7 +364,6 @@ class App extends React.Component {
   }
 
   updateNewState(newStatus) {
-    console.log(newStatus);
     this.setState({
       mood_params: newStatus.preferences,
       queue: newStatus.queue,
@@ -406,15 +412,33 @@ class App extends React.Component {
     this.setModalShow(false);
     const [newCurrentSong, newQueue] = spotify.skipSong(this.state.current_song.track_id, feedback);
 
-    this.state.current_song = newCurrentSong;
-    this.state.queue = newQueue;
+    this.setState({
+      current_song: newCurrentSong,
+      queue: newQueue
+    });
   }
 
   songFinished() {
-    const [newCurrentSong, newQueue] = spotify.finishSong(this.state.current_song.track_id);
+    const [newCurrentSong, newQueue] = spotify.finishSong(this.state.current_song.track_id, this.state.current_song_liked);
 
-    this.state.current_song = newCurrentSong;
-    this.state.queue = newQueue;
+    this.setState({
+      current_song: newCurrentSong,
+      queue: newQueue
+    });
+  }
+
+  setSongLiked() {
+    this.setState({
+      current_song_liked: true
+    });
+    console.log("Song liked");
+  }
+
+  setSongUnliked() {
+    this.setState({
+      current_song_liked: false
+    });
+    console.log("Song un-liked");
   }
 
   playerCallback(action) {

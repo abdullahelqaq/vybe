@@ -30,14 +30,11 @@ parentPort.on("message", function (msg) {
       seedSongs = msg.data;
       processTracks();
       break;
-    case 'like':
-      likeSong(msg.data.id);
-      break;
     case 'skip':
       skipSong(msg.data.id, msg.data.feedback);
       break;
     case 'finish':
-      finishSong(msg.data.id);
+      finishSong(msg.data.id, msg.data.liked);
       break;
   }
 });
@@ -66,8 +63,9 @@ async function processTracks() {
     seedSongsFeatures[songId].track_name = seedSongs[i].track_name;
     seedSongsFeatures[songId].artist_name = seedSongs[i].artist_name;
     seedSongsFeatures[songId].track_id = seedSongs[i].track_id;
+    seedSongsFeatures[songId].seed_song = true;
   }
-  queue = [...Object.values(seedSongsFeatures).slice(1)];
+  queue = [...Object.values(seedSongsFeatures)];
   const seedClusters = []
   for (const [id, data] of Object.entries(seedSongsFeatures)) {
     testedCluster = clusters.test(getClusterFeatures(data));
@@ -77,7 +75,7 @@ async function processTracks() {
   console.log('Target Cluster');
   console.log(targetCluster);
 
-  updateQueue(queueSize - queue.length);
+  updateQueue(true);
 }
 
 // Adjust the target cluster center using a specified weight
@@ -149,43 +147,53 @@ async function skipSong(songId, feedback) {
   }
   console.log("Skipping song: " + songId + ", Feedback: " + feedback);
   adjustClusterCenter(skipSongClusterCentersWeights[feedback], features);
-  updateQueue(1);
-}
-
-// Adjust cluster center
-async function likeSong(songId) {
-  let features = targetCluster.centroid;
-  if (songId in songs) {
-    features = getClusterFeatures(songs[songId]);
-  }
-  console.log("User liked song: " + songId);
-  adjustClusterCenter(likeSongClusterCentersWeight, features);
+  updateQueue(true);
 }
 
 // Song finished playing
-async function finishSong(songId) {
-  if (songId in songs)
+async function finishSong(songId, liked) {    
+  let features = targetCluster.centroid;
+  if (songId in songs) {
     songs[songId].played = 1;
-  console.log("Finished playing song");
-  updateQueue(1);
+    features = getClusterFeatures(songs[songId]);
+  }
+  let weight = finishSongClusterCentersWeight;
+  if (liked) {
+    console.log("User liked song: " + songId);
+    weight = likeSongClusterCentersWeight;
+  }
+  adjustClusterCenter(weight, features);
+  updateQueue(false);
 }
 
 // Randomly selects n elements that are in the target cluster for the queue
-function updateQueue(n) {
+function updateQueue(reset) {
+  // remove first element of queue
+  queue.shift();
+
   //find candidate songs
   let candidates = [];
   Object.values(songs).forEach(song => {
     song.cluster = determineCluster(getClusterFeatures(song));
+    song.seed_song = false;
     if (song.cluster == targetCluster.idx && song.played == 0)
       candidates.push(song);
   });
 
-  // prevent overflow
-  if (queue.length == queueSize)
-    queue.splice(0, n);
+  // prevent overflow but don't remove seed songs
+  let first = queue.findIndex(song => song.seed_song === false);
+  if (reset) {
+    if (first == -1) {
+      first = seedSongs.length - 1;
+    }
+    queue = queue.slice(0, first);
+  }
+  else {
+    queue = queue.slice(0, -1);
+  }
 
   // select songs from db
-  queue = [...queue, ...candidates.sort(() => Math.random() - Math.random()).slice(0, n)];
+  queue = [...queue, ...candidates.sort(() => Math.random() - Math.random()).slice(0, queueSize - queue.length - 1)];
   const preferences = [];
   let totalPreferences = {};
   queue.forEach((song) => {

@@ -70,11 +70,6 @@ export async function checkStatus() {
     });
     const preferencesBody = await preferencesResponse.json();
 
-    console.log("Updated queue: ");
-    console.log(queueBody.queue);
-    console.log("Updated preferences: ");
-    console.log(preferencesBody.preferences);
-
     queue = queueBody.queue;
     preferences = preferencesBody.preferences;
     return { queue: queue, preferences: preferences };
@@ -156,7 +151,7 @@ export function skipSong(songId, feedback) {
   return playNextSong();
 }
 
-export function finishSong(songId) {
+export function finishSong(songId, liked) {
   console.log("Song finished");
   fetch(`http://localhost:3000/finish?id=${sessionId}`, {
     method: 'POST',
@@ -165,7 +160,8 @@ export function finishSong(songId) {
     },
     mode: 'cors',
     body: JSON.stringify({
-      id: songId
+      id: songId,
+      liked: liked
     }
     )
   });

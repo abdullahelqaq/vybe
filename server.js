@@ -79,8 +79,9 @@ router.post('/skip', (req, res) => {
 router.post('/finish', (req, res) => {
   const id = req.query.id;
   const songId = req.query.id;
+  const liked = req.query.liked;
   if (id in userSessions)
-    userSessions[id].finishSong(songId);
+    userSessions[id].finishSong(songId, liked);
 });
 
 

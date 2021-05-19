@@ -28,7 +28,8 @@ export default class SpotifyPlayer extends React.Component {
     window.onSpotifyWebPlaybackSDKReady = async () => {
       const player = new window.Spotify.Player({
         name: 'vybe Player',
-        getOAuthToken: cb => { cb(this.state.token); }
+        getOAuthToken: cb => { cb(this.state.token); },
+        volume: 0.1
       });
       this.setState({ player: player })
 
