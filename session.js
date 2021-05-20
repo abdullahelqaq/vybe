@@ -1,4 +1,9 @@
 const { Worker } = require('worker_threads');
+const fetch = require('node-fetch');
+
+const clientId = "62598dfbbefd46eeb90783eb0b6d0ad9";
+const clientSecret = "660c17961ea5435a9efaada516d3f528";
+const redirectUri = "http://localhost:3000/authorized";
 
 class Session {
   constructor(id) {
@@ -13,22 +18,49 @@ class Session {
 
     // background worker init
     this.worker = new Worker('./worker.js');
-    this.worker.on('message', function (msg) {
-      switch (msg.type) {
-        case 'queue':
-          this.queue = msg.data;
-          break;
-        case 'preferences':
-          this.preferences = msg.data;
-          break;
-        case 'status':
-          this.status = msg.data;
-          break;
-      }
-    });
+    this.worker.on('message', this.processWorkerUpdate.bind(this));
   }
 
-  setSongs(songIds) {
+  processWorkerUpdate(msg) {
+    switch (msg.type) {
+      case 'queue':
+        this.queue = msg.data;
+        // console.log(this.queue);
+        break;
+      case 'preferences':
+        this.preferences = msg.data;
+        // console.log(this.preferences);
+        break;
+      case 'status':
+        console.log("Updated queue and preferences");
+        this.status = msg.data;
+        break;
+    }
+  }
+
+  // Use authorization code to authenticate user
+  async authenticate(code) {
+    const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Basic ' + Buffer.from(clientId + ':' + clientSecret).toString('base64')
+      },
+      mode: 'cors',
+      body: new URLSearchParams({
+        'code': code,
+        'redirect_uri': redirectUri,
+        'grant_type': 'authorization_code'
+      }
+      )
+    });
+    const tokens = await tokenResponse.json();
+    const accessToken = tokens.access_token;
+    const refreshToken = tokens.refresh_token;
+    console.log("Authorization token retrieved: " + accessToken);
+    this.setTokens(accessToken, refreshToken);
+  }
+
+  setSeedSongs(songIds) {
     this.seedSongs = songIds;
     this.worker.postMessage({type: 'seedSongs', data: songIds});
   }
@@ -41,6 +73,10 @@ class Session {
 
   skipSong(songId, feedback) {
     this.worker.postMessage({type: 'skip', data: {id: songId, feedback: feedback}});
+  }
+
+  finishSong(songId, liked) {
+    this.worker.postMessage({type: 'finish', data: {id: songId, liked: liked}});
   }
 }
 

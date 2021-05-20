@@ -1,5 +1,162 @@
+html, body {
+  min-height: 100%;
+  padding: 0;
+  margin: 0;
+}
+
 .App {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  background-image: linear-gradient( #ac223b, #2556b8);
+}
+
+.App-Login {
+  width: 80%;
+  height: 100%;
+  margin: 0 auto;
   text-align: center;
+  color: white;
+  display: table;
+}
+
+.Login-Wrapper {
+  display: table-cell;
+  vertical-align: middle;
+}
+
+.Invisible-Form {
+  display: inline;
+}
+
+.App-Login-Button {
+  -webkit-appearance: none;
+  
+  color: white;
+  background-color: #282C34;
+  height: 60px;
+  width: 180px;
+  border-radius: 10px;
+  font-size: 18px;
+  border: none;
+  font-weight:bold;
+}
+
+.Header-Left {
+  padding: 20px;
+  color: white;
+}
+
+.Header-Left-Compact {
+  padding: 20px;
+  color: white;
+  margin-bottom: -20px;
+}
+
+.Player {
+  color: white;
+  margin: 0px 20px 30px 20px;
+}
+
+h1 {
+  color: white;
+  text-align: center;
+}
+
+.modal {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.modal-react {
+  width: 85px;
+  height: 85px;
+}
+
+.modal-content {
+  width: 80%;
+  height: 85%;
+  border-radius: 25px;
+  padding: 10px;
+  background-color: #282C34;
+}
+
+.modal-input {
+  display: grid;
+  grid-row-gap: 50px;
+  grid-template-columns: auto auto auto;
+  width: 90%;
+}
+
+.modal-input-desc {
+  grid-column-start: span 2;
+}
+
+.Player h1, p {
+  text-align: center;
+}
+
+.Player p {
+  margin-top: -10px;
+}
+
+.Player-Grid {
+  display: grid;
+  grid-gap: 0px;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 30px;
+
+  width: 300px;
+}
+
+.Player-Button-Wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.Player-Button-Big {
+  height: 50px;
+  width: 50px;
+}
+
+.Player-Button {
+  height: 35px;
+  width: 35px;
+}
+
+.App-widget {
+  margin: 20px;
+  padding: 5px 15px 20px 15px;
+  border-radius: 15px;
+  background-color: #282c34;
+  color: white;
+  
+  opacity: 0.85;
+}
+
+.App-widget-wrapper {
+  width: calc(100vw - 80px);
+  margin: auto;
+}
+
+.App-widget h2 {
+  margin-bottom: 15px;
+}
+
+.App-widget h3, h4 {
+  text-align: center;
+  margin: 5px;
 }
 
 .App-logo {
@@ -13,17 +170,6 @@
   }
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
 .App-link {
   color: #61dafb;
 }
@@ -35,4 +181,86 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-widget {
+    animation: App-widget-breath infinite 5s linear;
+  }
+}
+
+@keyframes App-widget-breath {
+  0% {
+    margin: 20px;
+  }
+  50% {
+    margin: 15px;
+  }
+  100% {
+    margin: 20px;
+  }
+}
+
+/* MOVE TO NEW FILE BELOW */
+
+.Queue {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  background-color: #282C34;
+  opacity: 0.85;
+  color: white;
+}
+
+.Queue-Empty {
+  text-align: center;
+
+  position: relative;
+  top: 40%;
+  transform: translateY(-50%);
+}
+
+.Queue-Header {
+  text-align: center;
+  margin: auto;
+  margin-top: 40px;
+  margin-bottom: 0px;
+  width: 80%;
+}
+
+.Queue-Body {
+  width:90%;
+  margin: auto;
+}
+
+.Queue-Body p {
+  font-size: 17px;
+}
+
+.Search {
+  width: 245px;
+  height: 30px;
+  background-color: black;
+  color: white;
+  border-radius: 10px;
+}
+
+::placeholder {
+  color: white;
+  opacity: 1;
+}
+
+input[type='text'],
+input[type='number'],
+textarea {
+  font-size: 16px;
+}
+
+/* NEW FILE */
+.Param-Grid {
+  display: grid;
+  grid-gap: 30px;
+  grid-template-columns: repeat(2, 1fr);
 }

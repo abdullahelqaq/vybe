@@ -37,7 +37,9 @@ router.get('/authorized', async (req, res) => {
   id = uuidv4();
   userSessions[id] = new Session(id);
   console.log(`User authorized - Session id: ${id}`);
-  res.redirect(`/dashboard?id=${id}&code=${code}`);
+  await userSessions[id].authenticate(code);
+  const token = userSessions[id].accessToken;
+  res.redirect(`/dashboard?id=${id}&token=${token}`);
 });
 
 // GET /dashboard
@@ -52,20 +54,13 @@ router.get('/dashboard', async (req, res) => {
   res.sendFile(path.resolve(__dirname, './client/build', 'index.html'));
 });
 
-// POST /setSongs
-// Endpoint called when the access token has been granted to the client
-router.post('/token', (req, res) => {
-  const accessToken = req.body.accessToken;
-  const refreshToken = req.body.refreshToken;
-  userSessions[id].setTokens(accessToken, refreshToken);
-});
-
-// POST /setSongs
+// POST /setSeedSongs
 // Endpoint called when the user manually adds three new songs to their queue
 // Request body must contain the session id and list of song IDs
-router.post('/setSongs', (req, res) => {
+router.post('/setSeedSongs', (req, res) => {
   const id = req.query.id;
-  userSessions[id].setSongs(req.body.songs);
+  if (id in userSessions)
+    userSessions[id].setSeedSongs(req.body.songs);
 });
 
 // POST /skip
@@ -75,8 +70,20 @@ router.post('/skip', (req, res) => {
   const id = req.query.id;
   const songId = req.body.id;
   const feedback = req.body.feedback;
-  userSessions[id].skipSong(songId, feedback);
+  if (id in userSessions)
+    userSessions[id].skipSong(songId, feedback);
 });
+
+// POST /finish
+// Endpoint called when the song finishes playing
+router.post('/finish', (req, res) => {
+  const id = req.query.id;
+  const songId = req.query.id;
+  const liked = req.query.liked;
+  if (id in userSessions)
+    userSessions[id].finishSong(songId, liked);
+});
+
 
 // GET /status
 // Endpoint called when user checks for generated queue clustering status
@@ -84,7 +91,8 @@ router.post('/skip', (req, res) => {
 // Response body contains status code 0 (working) or 1 (completed)
 router.get('/status', (req, res) => {
   const id = req.query.id;
-  res.body = JSON.stringify({ status: userSessions[id].status });
+  if (id in userSessions)
+    res.json({ status: userSessions[id].status });
 });
 
 // GET /queue
@@ -93,8 +101,10 @@ router.get('/status', (req, res) => {
 // Response body contains list of song IDs
 router.get('/queue', (req, res) => {
   const id = req.query.id;
-  res.body = JSON.stringify({ queue: userSessions[id].queue });
-  userSessions[id].status = 0;
+  if (id in userSessions) {
+    res.json({ queue: userSessions[id].queue });
+    userSessions[id].status = 0;
+  }
 });
 
 // GET /preferences
@@ -103,8 +113,10 @@ router.get('/queue', (req, res) => {
 // Response body contains preferences
 router.get('/preferences', (req, res) => {
   const id = req.query.id;
-  res.body = JSON.stringify({ preferences: userSessions[id].preferences });
-  userSessions[id].status = 0;
+  if (id in userSessions) {
+    res.json({ preferences: userSessions[id].preferences });
+    userSessions[id].status = 0;
+  }
 });
 
 

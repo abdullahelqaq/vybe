@@ -1,3 +1,5 @@
+// dataset from https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-01-21
+
 const { parentPort } = require('worker_threads');
 const SpotifyWebApi = require('spotify-web-api-node');
 const skmeans = require("skmeans");
@@ -10,9 +12,9 @@ const queueSize = 10;
 const topSongsPlaylistYears = ['2020']
 const audioFeatures = ['Valence', 'Energy', 'Danceability', 'Acousticness', 'Loudness', 'Instrumentalness', 'Liveness', 'Speechiness'];
 
-const skipSongClusterCentersWeights = [-0.01, -0.025, -0.05];
-const likeSongClusterCentersWeight = 0.03;
-const finishSongClusterCentersWeight = 0.015;
+const skipSongClusterCentersWeights = [-0.1, -0.25, -0.5];
+const likeSongClusterCentersWeight = 0.3;
+const finishSongClusterCentersWeight = 0.15;
 
 let songs, queue = [];
 let spotify = new SpotifyWebApi();
@@ -23,7 +25,6 @@ let clusters, targetCluster;
 parentPort.on("message", function (msg) {
   switch (msg.type) {
     case 'tokens':
-      console.log(`Access token received`);
       spotify.setAccessToken(msg.data.accessToken);
       break;
     case 'seedSongs':
@@ -31,14 +32,11 @@ parentPort.on("message", function (msg) {
       seedSongs = msg.data;
       processTracks();
       break;
-    case 'like':
-      likeSong(msg.data.id);
-      break;
     case 'skip':
       skipSong(msg.data.id, msg.data.feedback);
       break;
     case 'finish':
-      finishSong(msg.data.id);
+      finishSong(msg.data.id, msg.data.liked);
       break;
   }
 });
@@ -61,10 +59,13 @@ async function processTracks() {
 
   // determine target cluster
   const seedSongsFeatures = await getAudioFeatures(seedSongs);
+  // add seed songs (except first one because its currently playing) to queue
   for (let i = 0; i < seedSongs.length; i++) {
-    seedSongsFeatures[seedSongs[i].id].track_id = seedSongs[i].id;
-    seedSongsFeatures[seedSongs[i].id].track_name = seedSongs[i].track_name;
-    seedSongsFeatures[seedSongs[i].id].artist_name = seedSongs[i].artist_name;
+    const songId = seedSongs[i].track_id;
+    seedSongsFeatures[songId].track_name = seedSongs[i].track_name;
+    seedSongsFeatures[songId].track_artist = seedSongs[i].track_artist;
+    seedSongsFeatures[songId].track_id = seedSongs[i].track_id;
+    seedSongsFeatures[songId].seed_song = true;
   }
   queue = [...Object.values(seedSongsFeatures)];
   const seedClusters = []
@@ -76,14 +77,14 @@ async function processTracks() {
   console.log('Target Cluster');
   console.log(targetCluster);
 
-  updateQueue(queueSize - queue.length);
+  updateQueue(true);
 }
 
 // Adjust the target cluster center using a specified weight
 async function adjustClusterCenter(weight, features) {
-  const offset = features.map(x => x * weight);
+  const newCentroid = features.map((x, i) => targetCluster.centroid[i] + ((targetCluster.centroid[i] - x) * weight));
   // clamp value
-  targetCluster.centroid = (targetCluster.centroid + offset).map(x => Math.min(Math.max(x, 0), 1));
+  targetCluster.centroid = newCentroid.map(x => Math.min(Math.max(x, 0), 1));
   clusters[targetCluster.idx] = targetCluster;
 }
 
@@ -125,10 +126,11 @@ async function retrieveUserTopTracks() {
 async function getAudioFeatures(tracks) {
   let features = {};
   for (let track of tracks) {
-    await spotify.getAudioFeaturesForTrack(track.id)
+    const id = 'id' in track ? track.id : track.track_id;
+    await spotify.getAudioFeaturesForTrack(id)
       .then(function (data) {
-        features[track.id] = data.body;
-        features[track.id].name = track.name;
+        features[id] = data.body;
+        features[id].name = track.name;
       });
   }
   return features;
@@ -140,41 +142,57 @@ function getClusterFeatures(data) {
 
 // Skip the song and use user feedback to adjust cluster centers
 async function skipSong(songId, feedback) {
-  songs[songId].played = 1;
-  console.log("Skipping song: " + songs[songId].track_name + ", Feedback: " + feedback);
-  adjustClusterCenter(skipSongClusterCentersWeights[feedback], getClusterFeatures(songs[songId]));
-  updateQueue(1);
-}
-
-// Adjust cluster center
-async function likeSong(songId) {
-  console.log("User liked song: " + songs[songId].track_name);
-  adjustClusterCenter(likeSongClusterCentersWeight, getClusterFeatures(songs[songId]));
+  let features = targetCluster.centroid;
+  if (songId in songs) {
+    songs[songId].played = 1;
+    features = getClusterFeatures(songs[songId]);
+  }
+  console.log("Skipping song: " + songId + ", Feedback: " + feedback);
+  adjustClusterCenter(skipSongClusterCentersWeights[feedback], features);
+  updateQueue(true);
 }
 
 // Song finished playing
-async function finishSong(songId) {
-  songs[songId].played = 1;
-  console.log("Finished playing song: " + songs[songId].track_name);
-  updateQueue(1);
+async function finishSong(songId, liked) {    
+  let features = targetCluster.centroid;
+  if (songId in songs) {
+    songs[songId].played = 1;
+    features = getClusterFeatures(songs[songId]);
+  }
+  let weight = finishSongClusterCentersWeight;
+  if (liked) {
+    console.log("User liked song: " + songId);
+    weight = likeSongClusterCentersWeight;
+  }
+  adjustClusterCenter(weight, features);
+  updateQueue(false);
 }
 
 // Randomly selects n elements that are in the target cluster for the queue
-function updateQueue(n) {
+function updateQueue(reset) {
+  // remove first element of queue
+  queue.shift();
+
   //find candidate songs
   let candidates = [];
   Object.values(songs).forEach(song => {
     song.cluster = determineCluster(getClusterFeatures(song));
+    song.seed_song = false;
     if (song.cluster == targetCluster.idx && song.played == 0)
       candidates.push(song);
   });
 
-  // prevent overflow
-  if (queue.length == queueSize)
-    queue.splice(0, n);
+  // prevent overflow but don't remove seed songs
+  let first = queue.findIndex(song => song.seed_song === false);
+  if (reset) {
+    if (first == -1) {
+      first = seedSongs.length - 1;
+    }
+    queue = queue.slice(0, first);
+  }
 
   // select songs from db
-  queue = [...queue, ...candidates.sort(() => Math.random() - Math.random()).slice(0, n)];
+  queue = [...queue, ...candidates.sort(() => Math.random() - Math.random()).slice(0, queueSize - queue.length)];
   const preferences = [];
   let totalPreferences = {};
   queue.forEach((song) => {
@@ -187,11 +205,6 @@ function updateQueue(n) {
     preferences.push({name: name, value: values.reduce((a, b) => a + b) / values.length})
   }
 
-  console.log("Updated Queue: ");
-  console.log(queue);
-  console.log("Updated Preferences: ");
-  console.log(preferences);
-
   parentPort.postMessage({ type: 'queue', data: queue });
   parentPort.postMessage({ type: 'preferences', data: preferences });
   parentPort.postMessage({ type: 'status', data: 1 });
@@ -201,8 +214,8 @@ function updateQueue(n) {
 function determineCluster(features) {
   let distances = clusters.centroids.map(centroid => Math.sqrt((Math.pow(centroid[0] - features[0], 2)) + (Math.pow(centroid[1] - features[1], 2)) + (Math.pow(centroid[2] - features[2], 2))));
   const min = Math.min(...distances);
-  if (min > threshold)
-    return -1;
+  // if (min > threshold)
+  //   return -1;
   return distances.indexOf(min);
 }
 
@@ -210,14 +223,18 @@ function determineCluster(features) {
 async function loadDatabase() {
   const task = new Promise((resolve, reject) => {
     let rows = {};
-    fs.createReadStream('data/SpotifySongs.csv')
+    fs.createReadStream('data/spotify_songs.csv')
       .pipe(csv())
       .on('data', (data) => {
         for (key in data) {
-          const parsed = parseFloat(data[key]);
-          if (!isNaN(parsed))
-            data[key] = parsed;
+          if (! (["track_artist", "track_name", "track_id"].includes(key))) {
+            const parsed = parseFloat(data[key]);
+            if (!isNaN(parsed))
+              data[key] = parsed;
+          }
         }
+        data.cluster = -1;
+        data.played = 0;
         rows[data.track_id] = data;
       })
       .on('end', () => {
