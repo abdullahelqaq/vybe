@@ -37,7 +37,7 @@ function renderQueueEntries(songs, count = -1) {
 
   for (let i = 0; i < limit; i++) {
     rows.push(
-      <p key={i}><b>{songs[i].track_name}</b> / {songs[i].artist_name}</p>
+      <p key={i}><b>{songs[i].track_name}</b> / {songs[i].track_artist}</p>
     );
   }
   return rows;
@@ -219,7 +219,7 @@ function Player(props) {
   return (
     <div className="Player">
       <h1>{props.current_song.track_name}</h1>
-      <b><p>{props.current_song.artist_name}</p></b>
+      <b><p>{props.current_song.track_artist}</p></b>
       {props.withControls && (
         <center>
           <div className="Player-Grid">

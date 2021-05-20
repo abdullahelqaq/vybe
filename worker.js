@@ -1,3 +1,5 @@
+// dataset from https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-01-21
+
 const { parentPort } = require('worker_threads');
 const SpotifyWebApi = require('spotify-web-api-node');
 const skmeans = require("skmeans");
@@ -61,7 +63,7 @@ async function processTracks() {
   for (let i = 0; i < seedSongs.length; i++) {
     const songId = seedSongs[i].track_id;
     seedSongsFeatures[songId].track_name = seedSongs[i].track_name;
-    seedSongsFeatures[songId].artist_name = seedSongs[i].artist_name;
+    seedSongsFeatures[songId].track_artist = seedSongs[i].track_artist;
     seedSongsFeatures[songId].track_id = seedSongs[i].track_id;
     seedSongsFeatures[songId].seed_song = true;
   }
@@ -188,12 +190,9 @@ function updateQueue(reset) {
     }
     queue = queue.slice(0, first);
   }
-  else {
-    queue = queue.slice(0, -1);
-  }
 
   // select songs from db
-  queue = [...queue, ...candidates.sort(() => Math.random() - Math.random()).slice(0, queueSize - queue.length - 1)];
+  queue = [...queue, ...candidates.sort(() => Math.random() - Math.random()).slice(0, queueSize - queue.length)];
   const preferences = [];
   let totalPreferences = {};
   queue.forEach((song) => {
@@ -215,8 +214,8 @@ function updateQueue(reset) {
 function determineCluster(features) {
   let distances = clusters.centroids.map(centroid => Math.sqrt((Math.pow(centroid[0] - features[0], 2)) + (Math.pow(centroid[1] - features[1], 2)) + (Math.pow(centroid[2] - features[2], 2))));
   const min = Math.min(...distances);
-  if (min > threshold)
-    return -1;
+  // if (min > threshold)
+  //   return -1;
   return distances.indexOf(min);
 }
 
@@ -224,16 +223,18 @@ function determineCluster(features) {
 async function loadDatabase() {
   const task = new Promise((resolve, reject) => {
     let rows = {};
-    fs.createReadStream('data/SpotifySongs.csv')
+    fs.createReadStream('data/spotify_songs.csv')
       .pipe(csv())
       .on('data', (data) => {
         for (key in data) {
-          if (! (["artist_name", "track_name", "track_id"].includes(key))) {
+          if (! (["track_artist", "track_name", "track_id"].includes(key))) {
             const parsed = parseFloat(data[key]);
             if (!isNaN(parsed))
               data[key] = parsed;
           }
         }
+        data.cluster = -1;
+        data.played = 0;
         rows[data.track_id] = data;
       })
       .on('end', () => {

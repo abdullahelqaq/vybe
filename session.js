@@ -25,16 +25,14 @@ class Session {
     switch (msg.type) {
       case 'queue':
         this.queue = msg.data;
-        console.log("Updated Queue, length: " + this.queue.length);
         // console.log(this.queue);
         break;
       case 'preferences':
         this.preferences = msg.data;
-        console.log("Updated Preferences ");
         // console.log(this.preferences);
         break;
       case 'status':
-        console.log("Session status update to " + msg.data);
+        console.log("Updated queue and preferences");
         this.status = msg.data;
         break;
     }

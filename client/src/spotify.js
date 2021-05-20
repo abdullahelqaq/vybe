@@ -87,17 +87,17 @@ export function testPopulateQueueSeedSongs() {
   let songs = [
     {
       track_name: "Faded",
-      artist_name: "Alan Walker",
+      track_artist: "Alan Walker",
       track_id: "7gHs73wELdeycvS48JfIos"
     },
     {
       track_name: "Come & Go",
-      artist_name: "Juice WRLD",
+      track_artist: "Juice WRLD",
       track_id: "6ltMvd6CjoydQZ4UzAQaqh"
     },
     {
       track_name: "In Your Arms",
-      artist_name: "ILLENIUM",
+      track_artist: "ILLENIUM",
       track_id: "70YPzqSEwJvAIQ6nMs1cjY"
     }
   ];
