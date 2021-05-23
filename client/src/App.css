@@ -264,6 +264,9 @@ h1 {
 .Queue-Body {
   width:90%;
   margin: auto;
+  margin-top: 0px;
+  flex-grow: 1;
+  overflow: auto;
 }
 
 .Queue-Body p {
