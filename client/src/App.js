@@ -1,18 +1,14 @@
 import React, { useState } from 'react';
 import './App.css';
 import * as spotify from './spotify.js';
-import Slider from '@material-ui/core/Slider';
-import play_button from './vectors/play-button.svg'
-import next_button from './vectors/next-button.svg'
-import rewind_button from './vectors/rewind-button.svg'
-import pause_button from './vectors/pause-button.svg'
-import good_react from './vectors/good.svg'
-import meh_react from './vectors/meh.svg'
-import bad_react from './vectors/bad.svg'
 import heart_empty from './vectors/heart-empty.svg'
 import heart_full from './vectors/heart-full.svg'
 
 import SpotifyPlayer from './player.js';
+import Queue from './queue.js'
+import Player, { player_controls, renderQueueEntries } from './player_ui.js'
+import MoodControl from './mood_control.js'
+import Feedback, { feedback_options } from './feedback.js'
 
 // Parse URL
 const parsed_url = window.location.href.split("?");
@@ -26,251 +22,6 @@ const hash = params
     }
     return initial;
   }, {});
-
-function renderQueueEntries(songs, count = -1) {
-  var rows = []
-  var limit = songs.length;
-
-  if (count !== -1 && count < songs.length) {
-    limit = count;
-  }
-
-  for (let i = 0; i < limit; i++) {
-    rows.push(
-      <p key={i}><b>{songs[i].track_name}</b> / {songs[i].track_artist}</p>
-    );
-  }
-  return rows;
-}
-
-class Queue extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      input_active: false,
-    };
-  }
-
-  stopExitClick(e) {
-    e.stopPropagation();
-    this.setState({
-      input_active: true
-    });
-  }
-
-  checkExitClick() {
-    if (!this.state.input_active) {
-      this.props.onClick();
-    } else {
-      this.setState({
-        input_active: false,
-      });
-    }
-  }
-
-  stopExitClick(e) {
-    e.stopPropagation();
-    this.setState({
-      input_active: true
-    });
-  }
-
-  checkExitClick() {
-    if (!this.state.input_active) {
-      this.props.onClick();
-    } else {
-      this.setState({
-        input_active: false,
-      });
-    }
-  }
-
-  render() {
-    if (this.props.queue.length === 0) {
-      return (
-        <div className="Queue" onClick={this.checkExitClick.bind(this)}>
-          <div className="Queue-Empty">
-            <h2>Add Songs to Queue</h2>
-            <input
-              onClick={this.stopExitClick.bind(this)}
-              className="Search"
-              type="text"
-              placeholder="Search.."
-            />
-          </div>
-        </div>
-      );
-    } else {
-      return (
-        <div className="Queue" onClick={this.checkExitClick.bind(this)}>
-          <div className="Queue-Header">
-            <input
-              onClick={this.stopExitClick.bind(this)}
-              className="Search"
-              type="text"
-              placeholder="Search.."
-            />
-            <Player current_song={this.props.current_song} />
-          </div>
-          <div className="Queue-Body">
-            <h2 className="Header-Left">Queue</h2>
-            {renderQueueEntries(this.props.queue)}
-          </div>
-        </div>
-      );
-    }
-  }
-}
-
-class MoodControl extends React.Component {
-
-  renderParamSliders(params) {
-    var sliders = []
-    for (let i = 0; i < params.length; i++) {
-      sliders.push(
-        <div key={i}>
-          <h4>{params[i].name}</h4>
-          <p />
-          <Slider
-            disabled
-            orientation="vertical"
-            style={{ height: "50px", color: "white", display: "table", margin: "0 auto" }}
-            max={1}
-            value={params[i].value}
-          />
-        </div>
-      );
-    }
-    return sliders;
-  }
-
-  render() {
-    return (
-      <div className="Queue" onClick={() => this.props.onClick()}>
-        <h2 className="Header-Left">{this.props.mood}</h2>
-        <div className="Param-Grid">
-          {this.renderParamSliders(this.props.params)}
-        </div>
-      </div>
-    );
-
-  }
-}
-
-const player_controls = {
-  PLAY: 0,
-  PAUSE: 1,
-  REWIND: 2,
-  SKIP: 3,
-  LIKE: 4
-}
-
-function Feedback(props) {
-
-  if (!props.show) {
-    return null;
-  }
-
-  return (
-    <div className="modal">
-      <div className="modal-content">
-        <center>
-          <h1>Feedback</h1>
-          <h4>Letting us know why you skipped the song will help us improve your suggestions!</h4>
-          <br /><br /><br />
-          <div className="modal-input">
-            <div className="Player-Button-Wrapper">
-              <img
-                className="modal-react"
-                src={good_react}
-                alt="good"
-                onClick={() => props.callback(feedback_options.GOOD)}
-              />
-            </div>
-            <p className="modal-input-desc">Good song but not feeling it right now</p>
-
-            <div className="Player-Button-Wrapper">
-              <img
-                className="modal-react"
-                src={meh_react}
-                alt="meh"
-                onClick={() => props.callback(feedback_options.MEH)}
-              />
-            </div>
-            <p className="modal-input-desc">Don’t like the song but it matches the vibe</p>
-
-            <div className="Player-Button-Wrapper">
-              <img
-                className="modal-react"
-                src={bad_react}
-                alt="bad"
-                onClick={() => props.callback(feedback_options.BAD)}
-              />
-            </div>
-            <p className="modal-input-desc">Way off</p>
-          </div>
-        </center>
-      </div>
-    </div>
-  );
-}
-
-function Player(props) {
-  return (
-    <div className="Player">
-      <h1>{props.current_song.track_name}</h1>
-      <b><p>{props.current_song.track_artist}</p></b>
-      {props.withControls && (
-        <center>
-          <div className="Player-Grid">
-            <div className="Player-Button-Wrapper">
-              <img
-                className="Player-Button"
-                src={rewind_button}
-                onClick={() => props.callback(player_controls.REWIND)}
-                alt="rewind"
-              />
-            </div>
-            {props.paused === true && (
-              <div className="Player-Button-Wrapper">
-                <img
-                  className="Player-Button-Big"
-                  src={play_button}
-                  onClick={() => props.callback(player_controls.PLAY)}
-                  alt="play"
-                />
-              </div>
-            )}
-            {props.paused === false && (
-              <div className="Player-Button-Wrapper">
-                <img
-                  className="Player-Button-Big"
-                  src={pause_button}
-                  onClick={() => props.callback(player_controls.PAUSE)}
-                  alt="pause"
-                />
-              </div>
-            )}
-            <div className="Player-Button-Wrapper">
-              <img
-                className="Player-Button"
-                src={next_button}
-                onClick={() => props.callback(player_controls.SKIP)}
-                alt="skip"
-              />
-            </div>
-          </div>
-        </center>
-      )}
-    </div>
-  );
-}
-
-const feedback_options = {
-  GOOD: 0,
-  MEH: 1,
-  BAD: 2
-}
 
 class App extends React.Component {
 
@@ -291,27 +42,14 @@ class App extends React.Component {
     this.state = {
       active_page: 0,
       current_song: {},
+      current_search: "",
       queue: [],
-
-      /*
-      mood: "Dancey",
-      mood_params: [
-        { name: "Accousticness", value: 0.9 },
-        { name: "Danceability", value: 0.2 },
-        { name: "Instrumental", value: 0.3 },
-        { name: "Energy", value: 0.8 },
-        { name: "Loudness", value: 0.7 },
-        { name: "Speechiness", value: 0.2 },
-        { name: "Tempo", value: 0.9 },
-        { name: "Valence", value: 0.4 },
-      ],
-      */
-
       current_song_liked: false,
-
       player_loaded: false,
       player_paused: false,
       modal_show: false,
+
+      search_results: [],
     }
 
     setInterval(() => {
@@ -474,7 +212,7 @@ class App extends React.Component {
   }
 
   renderDashboardHeader() {
-    if (this.state.current_song == null) {
+    if (this.state.current_song.track_name == null) {
       return (
         <div>
           <h2 className="Header-Left">Ready for Tunes</h2>
@@ -496,6 +234,9 @@ class App extends React.Component {
   }
 
   returnToDashboard() {
+    this.setState({
+      current_search: "",
+    });
     this.setActivePage(0);
   }
 
@@ -539,6 +280,10 @@ class App extends React.Component {
         </div>
       );
     }
+  }
+
+  onSearchChange(query) {
+    return spotify.search(query);
   }
 
   render() {
@@ -589,6 +334,11 @@ class App extends React.Component {
               onClick={this.returnToDashboard.bind(this)}
               current_song={this.state.current_song}
               queue={this.state.queue}
+              onSearchChange={this.onSearchChange.bind(this)}
+            /*
+            current_search={this.state.current_search}
+            search_results={this.state.search_results}
+            */
             />
           </div>
         );

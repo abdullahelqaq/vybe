@@ -118,7 +118,7 @@ export function playNextSong() {
   queue.shift();
   playSong(currentSong.track_id);
   console.log("Playing next song");
-  
+
   return [currentSong, queue]
 }
 
@@ -127,11 +127,11 @@ export async function playSong(songId) {
 }
 
 export async function pauseSong() {
-  return await spotify.pause({device_id: deviceId});
+  return await spotify.pause({ device_id: deviceId });
 }
 
 export async function resumeSong() {
-  return await spotify.play({device_id: deviceId});
+  return await spotify.play({ device_id: deviceId });
 }
 
 export function skipSong(songId, feedback) {
@@ -170,4 +170,8 @@ export function finishSong(songId, liked) {
 
 export async function restartSong() {
   return await spotify.seek(0);
+}
+
+export async function search(query) {
+  return await spotify.searchTracks(query);
 }
