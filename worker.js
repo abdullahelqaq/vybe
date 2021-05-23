@@ -2,21 +2,25 @@
 
 const { parentPort } = require('worker_threads');
 const SpotifyWebApi = require('spotify-web-api-node');
-const skmeans = require("skmeans");
-const csv = require('csv-parser')
-const fs = require('fs')
+const skmeans = require('skmeans');
+const csv = require('csv-parser');
+const fs = require('fs');
+const { resolve } = require('path');
+var spawn = require("child_process").spawn;
 
 const k = 4;
-const threshold = 0.1;
+const clusteringPyPath = './clustering/cluster.py';
+const threshold = 0.2;
 const queueSize = 10;
 const topSongsPlaylistYears = ['2020']
-const audioFeatures = ['Valence', 'Energy', 'Danceability', 'Acousticness', 'Loudness', 'Instrumentalness', 'Liveness', 'Speechiness'];
+const audioFeatures = ['Valence', 'Energy', 'Danceability', 'Acousticness', 'Loudness', 'Instrumentalness', 'Liveness', 'Speechiness', 'Tempo'];
+const clusterFeatures = ['valence', 'energy', 'danceability']; //'acousticness', 'tempo'
 
 const skipSongClusterCentersWeights = [-0.1, -0.25, -0.5];
 const likeSongClusterCentersWeight = 0.3;
 const finishSongClusterCentersWeight = 0.15;
 
-let songs, queue = [];
+let songs, keys, queue = [];
 let spotify = new SpotifyWebApi();
 let seedSongs;
 let clusters, targetCluster;
@@ -46,15 +50,18 @@ parentPort.on("message", function (msg) {
 //
 // This is only done once per session at the beginning
 async function processTracks() {
-  songs = await loadDatabase();
-  const tracks = await retrieveUserTopTracks();
+  // load song database
+  let dbSongs = await loadDatabase();
+  // retrieve user's top 50 tracks with corresponding audio features
+  let tracks = await retrieveUserTopTracks();
+
+  //normalize the data
+  [songs, tracks] = normalizeData(dbSongs, tracks);
+  keys = Object.keys(songs);
 
   // perform clustering
-  let vectors = [];
-  for (const [id, data] of Object.entries(tracks)) {
-    vectors.push(getClusterFeatures(data));
-  }
-  clusters = skmeans(vectors, k, 'kmpp');
+  const features = getClusterFeatures(Object.values(tracks));
+  clusters = await cluster(features)
   console.log(clusters);
 
   // determine target cluster
@@ -68,16 +75,37 @@ async function processTracks() {
     seedSongsFeatures[songId].seed_song = true;
   }
   queue = [...Object.values(seedSongsFeatures)];
-  const seedClusters = []
-  for (const [id, data] of Object.entries(seedSongsFeatures)) {
-    testedCluster = clusters.test(getClusterFeatures(data));
-    seedClusters.push(testedCluster);
-  }
-  targetCluster = mode(seedClusters);
+  const seedClusters = await determineClusters(getClusterFeatures(Object.values(seedSongsFeatures)), 1);
+
+  console.log(seedClusters);
+  targetCluster = clusters.centroids[mode(seedClusters)];
   console.log('Target Cluster');
   console.log(targetCluster);
 
-  updateQueue(true);
+  await updateQueue(true);
+}
+
+async function cluster(data) {
+  const task = new Promise((resolve, reject) => {
+    var process = spawn('python', [clusteringPyPath, 'cluster']);
+    process.stdin.write(JSON.stringify(data) + '\n');
+    process.stdout.on('data', function (data) {
+      let lines = data.toString().split("\n");
+      for (let s of lines) {
+        if (s.startsWith("Result: ") === true) {
+          s = s.replace("Result: ", "");
+          resolve(JSON.parse(s));
+        } else {
+          console.log(s);
+        }
+      }
+    });
+    process.stderr.on('data', function (data) {
+      console.error(data.toString());
+      reject(data.toString());
+    });
+  });
+  return task;
 }
 
 // Adjust the target cluster center using a specified weight
@@ -95,31 +123,48 @@ async function retrieveUserTopTracks() {
     .then(function (data) {
       return getAudioFeatures(data.body.items);
     });
-    
+
   return topTracks;
-  // // 'Your Top Songs' Playlist
-  // const playlistTracks = await spotify.searchPlaylists('Your Top Songs')
-  // .then(async function (data) {
-  //   userPlaylistTracks = {};
-  //   for (const playlist of data.body.playlists.items) {
-  //     for (const year of topSongsPlaylistYears) {
-  //       if (playlist.name.startsWith('Your Top Songs') && playlist.name.includes(year) && playlist.owner.id == 'spotify') {
-  //         const tracks = await spotify.getPlaylist(playlist.id)
-  //           .then(function (data) {
-  //             const filteredTracks = [];
-  //             for (const playlistTrack of data.body.tracks.items)
-  //               filteredTracks.push(playlistTrack.track);
-  //             return getAudioFeatures(filteredTracks);
-  //           });
+}
 
-  //         userPlaylistTracks = { ...userPlaylistTracks, ...tracks };
-  //       }
-  //     }
-  //   }
-  //   return userPlaylistTracks;
-  // });
+function normalizeData(db, tracks) {
+  let data = { ...tracks, ...db };
+  minmax = {}
+  //get min/max values
+  for (const featureName of clusterFeatures) {
+    let min = Number.MAX_SAFE_INTEGER, max = Number.MIN_SAFE_INTEGER;
+    for (const [id, song] of Object.entries(data)) {
+      min = Math.min(min, song[featureName]);
+      max = Math.max(max, song[featureName]);
+    }
+    minmax[featureName] = [min, max];
+  }
 
-  // return { ...topTracks, ...userPlaylistTracks };
+  // normalize data
+  for (let [id, song] of Object.entries(db)) {
+    for (const featureName of clusterFeatures) {
+      const [min, max] = minmax[featureName];
+      const val = song[featureName];
+      const delta = max - min;
+      if (delta == 0)
+        song[featureName] = 1;
+      else
+        song[featureName] = (val - min) / delta;
+    }
+  }
+  for (let [id, song] of Object.entries(tracks)) {
+    for (const featureName of clusterFeatures) {
+      const [min, max] = minmax[featureName];
+      const val = song[featureName];
+      const delta = max - min;
+      if (delta == 0)
+        song[featureName] = 1;
+      else
+        song[featureName] = (val - min) / delta;
+    }
+  }
+
+  return [db, tracks];
 }
 
 // Given a list of objects with an 'id' property, generate a dictionary of audio features for each one
@@ -137,7 +182,15 @@ async function getAudioFeatures(tracks) {
 }
 
 function getClusterFeatures(data) {
-  return [data.valence, data.energy, data.danceability];
+  let features = [];
+  for (const song of data) {
+    let songFeatures = [];
+    for (const featureName of clusterFeatures) {
+      songFeatures.push(song[featureName]);
+    }
+    features.push(songFeatures);
+  }
+  return features;
 }
 
 // Skip the song and use user feedback to adjust cluster centers
@@ -145,19 +198,19 @@ async function skipSong(songId, feedback) {
   let features = targetCluster.centroid;
   if (songId in songs) {
     songs[songId].played = 1;
-    features = getClusterFeatures(songs[songId]);
+    features = getClusterFeatures([songs[songId]])[0];
   }
   console.log("Skipping song: " + songId + ", Feedback: " + feedback);
   adjustClusterCenter(skipSongClusterCentersWeights[feedback], features);
-  updateQueue(true);
+  await updateQueue(true);
 }
 
 // Song finished playing
-async function finishSong(songId, liked) {    
+async function finishSong(songId, liked) {
   let features = targetCluster.centroid;
   if (songId in songs) {
     songs[songId].played = 1;
-    features = getClusterFeatures(songs[songId]);
+    features = getClusterFeatures([songs[songId]])[0];
   }
   let weight = finishSongClusterCentersWeight;
   if (liked) {
@@ -165,29 +218,30 @@ async function finishSong(songId, liked) {
     weight = likeSongClusterCentersWeight;
   }
   adjustClusterCenter(weight, features);
-  updateQueue(false);
+  await updateQueue(false);
 }
 
 // Randomly selects n elements that are in the target cluster for the queue
-function updateQueue(reset) {
+async function updateQueue(reset) {
   // remove first element of queue
   queue.shift();
 
   //find candidate songs
   let candidates = [];
-  Object.values(songs).forEach(song => {
-    song.cluster = determineCluster(getClusterFeatures(song));
-    song.seed_song = false;
-    if (song.cluster == targetCluster.idx && song.played == 0)
-      candidates.push(song);
-  });
+  const predClusters = await determineClusters(getClusterFeatures(Object.values(songs)), threshold);
+  for (let i = 0; i < predClusters.length; i++) {
+    const key = keys[i];
+    songs[key].cluster = predClusters[i];
+    songs[key].seed_song = false;
+    if (songs[key].cluster == targetCluster.idx && songs[key].played == 0)
+      candidates.push(songs[key]);
+  }
 
   // prevent overflow but don't remove seed songs
   let first = queue.findIndex(song => song.seed_song === false);
   if (reset) {
-    if (first == -1) {
+    if (first == -1)
       first = seedSongs.length - 1;
-    }
     queue = queue.slice(0, first);
   }
 
@@ -202,7 +256,7 @@ function updateQueue(reset) {
     });
   });
   for (const [name, values] of Object.entries(totalPreferences)) {
-    preferences.push({name: name, value: values.reduce((a, b) => a + b) / values.length})
+    preferences.push({ name: name, value: values.reduce((a, b) => a + b) / values.length })
   }
 
   parentPort.postMessage({ type: 'queue', data: queue });
@@ -211,12 +265,27 @@ function updateQueue(reset) {
 }
 
 // determine which cluster a song is part of
-function determineCluster(features) {
-  let distances = clusters.centroids.map(centroid => Math.sqrt((Math.pow(centroid[0] - features[0], 2)) + (Math.pow(centroid[1] - features[1], 2)) + (Math.pow(centroid[2] - features[2], 2))));
-  const min = Math.min(...distances);
-  // if (min > threshold)
-  //   return -1;
-  return distances.indexOf(min);
+async function determineClusters(data, t) {
+  const task = new Promise((resolve, reject) => {
+    var process = spawn('python', [clusteringPyPath, 'predict', JSON.stringify(clusters.centroids), t]);
+    process.stdin.write(JSON.stringify(data) + '\n');
+    process.stdout.on('data', function (data) {
+      let lines = data.toString().split("\n");
+      for (let s of lines) {
+        if (s.startsWith("Result: ") === true) {
+          s = s.replace("Result: ", "");
+          resolve(JSON.parse(s));
+        } else {
+          console.log(s);
+        }
+      }
+    });
+    process.stderr.on('data', function (data) {
+      console.error(data.toString());
+      reject(data.toString());
+    });
+  });
+  return task;
 }
 
 // Load the csv database as a JSON object
@@ -227,7 +296,7 @@ async function loadDatabase() {
       .pipe(csv())
       .on('data', (data) => {
         for (key in data) {
-          if (! (["track_artist", "track_name", "track_id"].includes(key))) {
+          if (!(["track_artist", "track_name", "track_id"].includes(key))) {
             const parsed = parseFloat(data[key]);
             if (!isNaN(parsed))
               data[key] = parsed;
