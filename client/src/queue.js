@@ -88,12 +88,13 @@ export default class Queue extends React.Component {
         }
     }
 
-    queueTrack(track_id) {
-        console.log("Queueing " + track_id);
+    queueTrack(songId, name, artist_names) {
+        console.log("Queueing " + songId);
         this.setState({
             current_search: "",
             search_results: []
         });
+        this.props.addSong(songId, name, artist_names);
     }
 
     render() {
@@ -114,7 +115,7 @@ export default class Queue extends React.Component {
 
                             if (track.artists.length > 1) {
                                 return (
-                                    <div className="Queue-Search-Cell" onClick={() => this.queueTrack(track.id)}>
+                                    <div className="Queue-Search-Cell" onClick={() => this.queueTrack(track.id, track.name, [track.artists[0].name, track.artists[1].name])}>
                                         <img src={track.album.images[0].url} className="Queue-Search-Image" />
                                         <p className="Queue-Search-Text"><b>{track.name}</b><br /><br />{track.artists[0].name} & {track.artists[1].name}</p>
                                     </div>
@@ -122,7 +123,7 @@ export default class Queue extends React.Component {
                             }
                             else {
                                 return (
-                                    <div className="Queue-Search-Cell" onClick={() => this.queueTrack(track.id)}>
+                                    <div className="Queue-Search-Cell" onClick={() => this.queueTrack(track.id, track.name, [track.artists[0].name])}>
                                         <img src={track.album.images[0].url} className="Queue-Search-Image" />
                                         <p className="Queue-Search-Text"><b>{track.name}</b><br /><br />{track.artists[0].name}</p>
                                     </div>

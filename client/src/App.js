@@ -59,27 +59,6 @@ class App extends React.Component {
         }
       })
     }, spotify.checkServerStatusIntervalMs);
-
-    document.addEventListener('keydown', function (event) {
-      if (event.key == 'Enter') {
-        if (this.state.active_page === 1) {
-          console.log("Setting seed songs");
-          const seedSongs = spotify.testPopulateQueueSeedSongs();
-          this.setState({
-            current_song: seedSongs.queue[0],
-            queue: seedSongs.queue.slice(1)
-          });
-        }
-      }
-      else if (event.key == 'l') {
-        if (this.state.current_song_liked) {
-          this.setSongUnliked();
-        }
-        else {
-          this.setSongLiked();
-        }
-      }
-    }.bind(this));
   }
 
   setPlayerLoaded(device_id) {
@@ -105,6 +84,7 @@ class App extends React.Component {
     this.setState({
       mood_params: newStatus.preferences,
       queue: newStatus.queue,
+      current_song: newStatus.currentSong
     });
 
     var maxIndex = 0;
@@ -152,6 +132,15 @@ class App extends React.Component {
   submitSkipFeedback(feedback) {
     this.setModalShow(false);
     const [newCurrentSong, newQueue] = spotify.skipSong(this.state.current_song.track_id, feedback);
+
+    this.setState({
+      current_song: newCurrentSong,
+      queue: newQueue
+    });
+  }
+
+  addSong(id, name, artists) {
+    const [newCurrentSong, newQueue] = spotify.addSong(id, name, artists);
 
     this.setState({
       current_song: newCurrentSong,
@@ -335,6 +324,7 @@ class App extends React.Component {
               current_song={this.state.current_song}
               queue={this.state.queue}
               onSearchChange={this.onSearchChange.bind(this)}
+              addSong={this.addSong.bind(this)}
             /*
             current_search={this.state.current_search}
             search_results={this.state.search_results}

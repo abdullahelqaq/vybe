@@ -1,6 +1,7 @@
 import SpotifyWebApi from 'spotify-web-api-js';
 
-let currentSong, queue, preferences;
+let currentSong, queue = [];
+let preferences;
 
 let sessionId = null;
 let deviceId = null;
@@ -33,21 +34,31 @@ export function checkUrlParams() {
   }
 }
 
-// set seed songs
-// TODO: Implement search feature instead of hardcoding three song IDs
-export function setSeedSongs() {
-  const response = fetch(`http://localhost:3000/setSeedSongs?id=${sessionId}`, {
+export function addSong(songId, name, artist_names) {
+  const song = {
+    track_id: songId,
+    track_name: name,
+    track_artist: artist_names.join(' & ')
+  };
+  fetch(`http://localhost:3000/addSong?id=${sessionId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
     mode: 'cors',
     body: JSON.stringify({
-      songs: [...[currentSong], ...queue]
+      song: song
     }
     )
   });
-  return response;
+  if (!currentSong) {
+    currentSong = song;
+    playSong(currentSong.track_id);
+  } else {
+    queue.push(song);
+  }
+    
+  return [currentSong, queue]
 }
 
 // checks status and returns queue and preferences if there is an updated one waiting
@@ -70,9 +81,14 @@ export async function checkStatus() {
     });
     const preferencesBody = await preferencesResponse.json();
 
-    queue = queueBody.queue;
-    preferences = preferencesBody.preferences;
-    return { queue: queue, preferences: preferences };
+    const updatedQueue = queueBody.queue;
+    const updatedPreferences = preferencesBody.preferences;
+    currentSong = updatedQueue[0];
+    updatedQueue.shift();
+    queue = updatedQueue;
+    console.log(currentSong);
+    console.log(queue);
+    return { currentSong: currentSong, queue: queue, preferences: updatedPreferences };
   }
 
   return null;
@@ -80,35 +96,6 @@ export async function checkStatus() {
 
 export function setDeviceId(id) {
   deviceId = id;
-}
-
-// for demo purposes - add three seed songs to simulate searching and adding them manually
-export function testPopulateQueueSeedSongs() {
-  let songs = [
-    {
-      track_name: "Faded",
-      track_artist: "Alan Walker",
-      track_id: "7gHs73wELdeycvS48JfIos"
-    },
-    {
-      track_name: "Come & Go",
-      track_artist: "Juice WRLD",
-      track_id: "6ltMvd6CjoydQZ4UzAQaqh"
-    },
-    {
-      track_name: "In Your Arms",
-      track_artist: "ILLENIUM",
-      track_id: "70YPzqSEwJvAIQ6nMs1cjY"
-    }
-  ];
-
-  currentSong = songs[0];
-  songs.shift();
-  queue = [...songs];
-  playSong(currentSong.track_id);
-  setSeedSongs();
-
-  return { queue: [...[currentSong], ...queue], preferences: null };
 }
 
 // SONG CONTROLS

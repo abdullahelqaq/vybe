@@ -6,6 +6,7 @@ const skmeans = require("skmeans");
 const csv = require('csv-parser')
 const fs = require('fs')
 
+const numSeedSongs = 3;
 const k = 4;
 const threshold = 0.1;
 const queueSize = 10;
@@ -16,9 +17,9 @@ const skipSongClusterCentersWeights = [-0.1, -0.25, -0.5];
 const likeSongClusterCentersWeight = 0.3;
 const finishSongClusterCentersWeight = 0.15;
 
-let songs, queue = [];
+let songs;
+let queue = [];
 let spotify = new SpotifyWebApi();
-let seedSongs;
 let clusters, targetCluster;
 
 // receive messages from main thread
@@ -27,10 +28,10 @@ parentPort.on("message", function (msg) {
     case 'tokens':
       spotify.setAccessToken(msg.data.accessToken);
       break;
-    case 'seedSongs':
-      console.log(`Seed songs received`);
-      seedSongs = msg.data;
-      processTracks();
+    case 'song':
+      console.log(`Song received`);
+      song = msg.data;
+      addSong(song);
       break;
     case 'skip':
       skipSong(msg.data.id, msg.data.feedback);
@@ -41,11 +42,26 @@ parentPort.on("message", function (msg) {
   }
 });
 
+async function addSong(song) {
+  const songsFeatures = await getAudioFeatures([song]);
+  const songId = song.track_id;
+  songsFeatures[songId].track_name = song.track_name;
+  songsFeatures[songId].track_artist = song.track_artist;
+  songsFeatures[songId].track_id = song.track_id;
+  songsFeatures[songId].user_song = true;
+
+  queue.push(songsFeatures[songId]);
+
+  if (queue.length == numSeedSongs) {
+    await processTracks([...queue]);
+  }
+}
+
 // Retrieve top tracks for the user and apply k-means clustering
 // Then use the seed songs to identify the target cluster for song suggestions
 //
 // This is only done once per session at the beginning
-async function processTracks() {
+async function processTracks(seedSongs) {
   songs = await loadDatabase();
   const tracks = await retrieveUserTopTracks();
 
@@ -58,18 +74,8 @@ async function processTracks() {
   console.log(clusters);
 
   // determine target cluster
-  const seedSongsFeatures = await getAudioFeatures(seedSongs);
-  // add seed songs (except first one because its currently playing) to queue
-  for (let i = 0; i < seedSongs.length; i++) {
-    const songId = seedSongs[i].track_id;
-    seedSongsFeatures[songId].track_name = seedSongs[i].track_name;
-    seedSongsFeatures[songId].track_artist = seedSongs[i].track_artist;
-    seedSongsFeatures[songId].track_id = seedSongs[i].track_id;
-    seedSongsFeatures[songId].seed_song = true;
-  }
-  queue = [...Object.values(seedSongsFeatures)];
   const seedClusters = []
-  for (const [id, data] of Object.entries(seedSongsFeatures)) {
+  for (const [id, data] of Object.entries(seedSongs)) {
     testedCluster = clusters.test(getClusterFeatures(data));
     seedClusters.push(testedCluster);
   }
@@ -77,7 +83,7 @@ async function processTracks() {
   console.log('Target Cluster');
   console.log(targetCluster);
 
-  updateQueue(true);
+  updateQueue(false, true);
 }
 
 // Adjust the target cluster center using a specified weight
@@ -149,7 +155,7 @@ async function skipSong(songId, feedback) {
   }
   console.log("Skipping song: " + songId + ", Feedback: " + feedback);
   adjustClusterCenter(skipSongClusterCentersWeights[feedback], features);
-  updateQueue(true);
+  updateQueue(true, true);
 }
 
 // Song finished playing
@@ -165,34 +171,36 @@ async function finishSong(songId, liked) {
     weight = likeSongClusterCentersWeight;
   }
   adjustClusterCenter(weight, features);
-  updateQueue(false);
+  updateQueue(true, false);
 }
 
 // Randomly selects n elements that are in the target cluster for the queue
-function updateQueue(reset) {
+function updateQueue(shift, reset) {
   // remove first element of queue
-  queue.shift();
+  if (shift)
+    queue.shift();
 
   //find candidate songs
   let candidates = [];
   Object.values(songs).forEach(song => {
     song.cluster = determineCluster(getClusterFeatures(song));
-    song.seed_song = false;
+    song.user_song = false;
     if (song.cluster == targetCluster.idx && song.played == 0)
       candidates.push(song);
   });
 
-  // prevent overflow but don't remove seed songs
-  let first = queue.findIndex(song => song.seed_song === false);
-  if (reset) {
-    if (first == -1) {
-      first = seedSongs.length - 1;
+  // select songs from db
+  let i = 0;
+  while (i < queueSize) {
+    if (i < queue.length) {
+      if (!queue[i].user_song)
+        queue[i] = candidates[Math.floor(Math.random() * candidates.length)];
+    } else {
+      queue.push(candidates[Math.floor(Math.random() * candidates.length)]);
     }
-    queue = queue.slice(0, first);
+    i++;
   }
 
-  // select songs from db
-  queue = [...queue, ...candidates.sort(() => Math.random() - Math.random()).slice(0, queueSize - queue.length)];
   const preferences = [];
   let totalPreferences = {};
   queue.forEach((song) => {

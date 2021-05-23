@@ -14,7 +14,6 @@ class Session {
     this.queue = [];
     this.preferences = [];
     this.status = 0; // 0 for idle, 1 for new queue waiting
-    this.seedSongs = [];
 
     // background worker init
     this.worker = new Worker('./worker.js');
@@ -60,9 +59,8 @@ class Session {
     this.setTokens(accessToken, refreshToken);
   }
 
-  setSeedSongs(songIds) {
-    this.seedSongs = songIds;
-    this.worker.postMessage({type: 'seedSongs', data: songIds});
+  addSong(song) {
+    this.worker.postMessage({type: 'song', data: song});
   }
 
   setTokens(accessToken, refreshToken) {

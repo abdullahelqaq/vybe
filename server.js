@@ -54,13 +54,13 @@ router.get('/dashboard', async (req, res) => {
   res.sendFile(path.resolve(__dirname, './client/build', 'index.html'));
 });
 
-// POST /setSeedSongs
-// Endpoint called when the user manually adds three new songs to their queue
-// Request body must contain the session id and list of song IDs
-router.post('/setSeedSongs', (req, res) => {
+// POST /addSong
+// Endpoint called when the user manually adds a new song to their queue
+// Request body must contain the session id and song IDs
+router.post('/addSong', (req, res) => {
   const id = req.query.id;
   if (id in userSessions)
-    userSessions[id].setSeedSongs(req.body.songs);
+    userSessions[id].addSong(req.body.song);
 });
 
 // POST /skip
