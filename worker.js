@@ -6,6 +6,7 @@ const fs = require('fs');
 
 const { Spotify, Clustering } = require('./utilities.js')
 
+const numSeedSongs = 3;
 const clusteringPyPath = './clustering/cluster.py';
 const threshold = 0.2;
 const queueSize = 10;
@@ -18,49 +19,54 @@ const skipSongClusterCentersWeights = [-0.1, -0.25, -0.5];
 const likeSongClusterCentersWeight = 0.3;
 const finishSongClusterCentersWeight = 0.15;
 
-let songs, keys, queue = [];
-let seedSongs;
+let songs, topTracks, keys, queue = [];
 let clusters, targetCluster;
 
 let spotify, clustering;
+let taskQueue = [];
+let taskRunning = false;
 
 // receive messages from main thread
 parentPort.on("message", function (msg) {
   switch (msg.type) {
     case 'tokens':
-      spotify = new Spotify(msg.data.accessToken);
-      clustering = new Clustering(clusterFeatures, clusteringPyPath);
+      taskQueue.push([initialize, [msg.data.accessToken]]);
       break;
     case 'seedSongs':
       console.log(`Seed songs received`);
-      seedSongs = msg.data;
-      processTracks();
+      taskQueue.push([setSeedSongs, [msg.data]]);
       break;
     case 'skip':
-      skipSong(msg.data.id, msg.data.feedback);
+      taskQueue.push([skipSong, [msg.data.id, msg.data.feedback]]);
       break;
     case 'finish':
-      finishSong(msg.data.id, msg.data.liked);
+      taskQueue.push([finishSong, [msg.data.id, msg.data.liked]]);
       break;
   }
 });
 
-// Retrieve top tracks for the user and apply k-means clustering
-// Then use the seed songs to identify the target cluster for song suggestions
+// Retrieve user's top songs and normalize all data (top songs and database)
 //
 // This is only done once per session at the beginning
-async function processTracks() {
+async function initialize(accessToken) {
+  spotify = new Spotify(accessToken);
+  clustering = new Clustering(clusterFeatures, clusteringPyPath);
   // load song database
   let dbSongs = await loadDatabase();
   // retrieve user's top 50 tracks with corresponding audio features
   let tracks = await spotify.retrieveUserTopTracks();
 
   //normalize the data
-  [songs, tracks] = normalizeData(dbSongs, tracks);
-  keys = Object.keys(songs);
+  [songs, keys, topTracks] = normalizeData(dbSongs, tracks);
+}
 
+// Apply k-means clustering and use the seed songs to identify the target 
+// cluster for song suggestions
+//
+// This is only done once per session at the beginning
+async function setSeedSongs(seedSongs) {
   // perform clustering
-  const features = clustering.getClusterFeatures(Object.values(tracks));
+  const features = clustering.getClusterFeatures(Object.values(topTracks));
   clusters = await clustering.cluster(features)
   console.log(clusters);
 
@@ -151,7 +157,7 @@ function normalizeData(db, tracks) {
     }
   }
 
-  return [db, tracks];
+  return [db, Object.keys(db), tracks];
 }
 
 // Adjust the target cluster center using a specified weight
@@ -183,7 +189,7 @@ async function updateQueue(reset) {
   let first = queue.findIndex(song => song.seed_song === false);
   if (reset) {
     if (first == -1)
-      first = seedSongs.length - 1;
+      first = numSeedSongs - 1;
     queue = queue.slice(0, first);
   }
 
@@ -242,3 +248,13 @@ function mode(clusterList) {
     - clusterList.filter(v => v.idx === b).length
   ).pop();
 }
+
+setInterval(async () => {
+  if (!taskRunning && taskQueue.length > 0) {
+    taskRunning = true;
+    const [task, args] = taskQueue[0];
+    taskQueue.shift();
+    await task(...args);
+    taskRunning = false;
+  }
+}, 500);
