@@ -53,6 +53,7 @@ html, body {
   padding: 20px;
   color: white;
   margin-bottom: -20px;
+  margin-right: 20px;
 }
 
 .Player {
@@ -133,6 +134,12 @@ h1 {
 .Player-Button {
   height: 35px;
   width: 35px;
+}
+
+.Like-Button {
+  height: 32px;
+  width: 32px;
+  float: right;
 }
 
 .App-widget {
@@ -217,7 +224,6 @@ h1 {
 
 .Queue-Empty {
   text-align: center;
-
   position: relative;
   top: 40%;
   transform: translateY(-50%);

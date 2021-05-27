@@ -138,15 +138,33 @@ export default class Queue extends React.Component {
         else if (this.props.queue.length === 0) {
             return (
                 <div className="Queue" onClick={this.checkExitClick.bind(this)}>
-                    <div className="Queue-Empty">
-                        <h2>Add Songs to Queue</h2>
-                        <SearchBar
-                            onExitClick={this.stopExitClick.bind(this)}
-                            onSearchChange={this.onSearchChange.bind(this)}
-                            initValue={this.props.current_search}
-                            input_active={this.state.input_active}
-                        />
-                    </div>
+                    {'track_name' in this.props.current_song === true && (
+                        <div>
+                            <br /><br /><br /><br />
+                            <Player current_song={this.props.current_song} />
+                            <br />
+                            <center>
+                                <h2>Add Songs to Queue</h2>
+                                <SearchBar
+                                    onExitClick={this.stopExitClick.bind(this)}
+                                    onSearchChange={this.onSearchChange.bind(this)}
+                                    initValue={this.props.current_search}
+                                    input_active={this.state.input_active}
+                                />
+                            </center>
+                        </div>
+                    )}
+                    {'track_name' in this.props.current_song === false && (
+                        <div className="Queue-Empty">
+                            <h2>Add Songs to Queue</h2>
+                            <SearchBar
+                                onExitClick={this.stopExitClick.bind(this)}
+                                onSearchChange={this.onSearchChange.bind(this)}
+                                initValue={this.props.current_search}
+                                input_active={this.state.input_active}
+                            />
+                        </div>
+                    )}
                 </div>
             );
         } else {

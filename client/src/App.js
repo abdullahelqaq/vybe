@@ -210,7 +210,25 @@ class App extends React.Component {
     } else {
       return (
         <div>
-          <h3 className="Header-Left-Compact">Currently Playing</h3>
+          <h3 className="Header-Left-Compact">
+            Currently Playing
+            {this.state.current_song_liked == false && (
+              <img
+                className="Like-Button"
+                src={heart_empty}
+                onClick={() => this.setSongLiked()}
+                alt="like"
+              />
+            )}
+            {this.state.current_song_liked == true && (
+              <img
+                className="Like-Button"
+                src={heart_full}
+                onClick={() => this.setSongUnliked()}
+                alt="unlike"
+              />
+            )}
+          </h3>
           <Player
             current_song={this.state.current_song}
             withControls={true}
