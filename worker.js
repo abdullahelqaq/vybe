@@ -202,7 +202,7 @@ async function updateQueue(shift, reset) {
 
   // select songs from db
   if (reset) {
-    for (let i = 0; i < queueSize; i++) {
+    for (let i = 1; i < queueSize; i++) {
       if (i < queue.length) {
         if (!queue[i].user_song)
           queue[i] = candidates[Math.floor(Math.random() * candidates.length)];

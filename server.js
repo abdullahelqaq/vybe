@@ -61,6 +61,7 @@ router.post('/addSong', (req, res) => {
   const id = req.query.id;
   if (id in userSessions)
     userSessions[id].addSong(req.body.song);
+  res.end();
 });
 
 // POST /skip
@@ -72,6 +73,7 @@ router.post('/skip', (req, res) => {
   const feedback = req.body.feedback;
   if (id in userSessions)
     userSessions[id].skipSong(songId, feedback);
+  res.end();
 });
 
 // POST /finish
@@ -82,6 +84,7 @@ router.post('/finish', (req, res) => {
   const liked = req.query.liked;
   if (id in userSessions)
     userSessions[id].finishSong(songId, liked);
+  res.end();
 });
 
 // GET /updates
@@ -97,7 +100,6 @@ router.get('/updates', (req, res) => {
   res.writeHead(200, headers);
 
   if (!(id in userSessions)) {
-    delete userSessions[id];
     res.end();
     return;
   }
