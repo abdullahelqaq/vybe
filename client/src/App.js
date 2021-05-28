@@ -29,9 +29,14 @@ class App extends React.Component {
     // figure out how to set token here
     let _token = hash.token;
     if (_token) {
+      // subscribe to SSE 
+      const _sse_source = new EventSource(`http://localhost:3000/updates?id=${hash.id}`);
+      _sse_source.onmessage = event => this.updateNewState(event);
+
       // Set token & songs
       this.setState({
-        token: _token
+        token: _token,
+        sse_source: _sse_source
       });
     }
   }
@@ -51,14 +56,6 @@ class App extends React.Component {
 
       search_results: [],
     }
-
-    setInterval(() => {
-      spotify.checkStatus().then(res => {
-        if (res) {
-          this.updateNewState(res);
-        }
-      })
-    }, spotify.checkServerStatusIntervalMs);
   }
 
   setPlayerLoaded(device_id) {
@@ -80,7 +77,8 @@ class App extends React.Component {
     });
   }
 
-  updateNewState(newStatus) {
+  updateNewState(event) {
+    const newStatus = spotify.processUpdate(JSON.parse(event.data));
     this.setState({
       mood_params: newStatus.preferences,
       queue: newStatus.queue,

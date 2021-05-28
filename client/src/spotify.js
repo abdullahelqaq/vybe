@@ -19,8 +19,6 @@ let spotify = new SpotifyWebApi({
   clientId: clientId
 });
 
-export const checkServerStatusIntervalMs = 5000;
-
 checkUrlParams();
 
 export const authorizationUrl = `${authEndpoint}?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join("%20")}&response_type=code&show_dialog=true`;
@@ -61,37 +59,13 @@ export function addSong(songId, name, artist_names) {
   return [currentSong, queue]
 }
 
-// checks status and returns queue and preferences if there is an updated one waiting
-export async function checkStatus() {
-  const statusResponse = await fetch(`http://localhost:3000/status?id=${sessionId}`, {
-    method: 'GET',
-    mode: 'cors'
-  });
-  const statusBody = await statusResponse.json();
-
-  if (statusBody.status == 1) {
-    const queueResponse = await fetch(`http://localhost:3000/queue?id=${sessionId}`, {
-      method: 'GET',
-      mode: 'cors'
-    });
-    const queueBody = await queueResponse.json();
-    const preferencesResponse = await fetch(`http://localhost:3000/preferences?id=${sessionId}`, {
-      method: 'GET',
-      mode: 'cors'
-    });
-    const preferencesBody = await preferencesResponse.json();
-
-    const updatedQueue = queueBody.queue;
-    const updatedPreferences = preferencesBody.preferences;
-    currentSong = updatedQueue[0];
-    updatedQueue.shift();
-    queue = updatedQueue;
-    console.log(currentSong);
-    console.log(queue);
-    return { currentSong: currentSong, queue: queue, preferences: updatedPreferences };
-  }
-
-  return null;
+export function processUpdate(data) {
+  const updatedQueue = data.queue;
+  const updatedPreferences = data.preferences;
+  currentSong = updatedQueue[0];
+  updatedQueue.shift();
+  queue = updatedQueue;
+  return { currentSong: currentSong, queue: updatedQueue, preferences: updatedPreferences };
 }
 
 export function setDeviceId(id) {
