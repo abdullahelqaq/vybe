@@ -32,13 +32,13 @@ export function checkUrlParams() {
   }
 }
 
-export function addSong(songId, name, artist_names) {
+export async function addSong(songId, name, artist_names) {
   const song = {
     track_id: songId,
     track_name: name,
     track_artist: artist_names.join(' & ')
   };
-  fetch(`http://localhost:3000/addSong?id=${sessionId}`, {
+  await fetch(`http://localhost:3000/addSong?id=${sessionId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -95,9 +95,8 @@ export async function resumeSong() {
   return await spotify.play({ device_id: deviceId });
 }
 
-export function skipSong(songId, feedback) {
-  console.log("Song skipped");
-  fetch(`http://localhost:3000/skip?id=${sessionId}`, {
+export async function skipSong(songId, feedback) {
+  await fetch(`http://localhost:3000/skip?id=${sessionId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -112,9 +111,8 @@ export function skipSong(songId, feedback) {
   return playNextSong();
 }
 
-export function finishSong(songId, liked) {
-  console.log("Song finished");
-  fetch(`http://localhost:3000/finish?id=${sessionId}`, {
+export async function finishSong(songId, liked) {
+  await fetch(`http://localhost:3000/finish?id=${sessionId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'

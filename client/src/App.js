@@ -129,30 +129,36 @@ class App extends React.Component {
 
   submitSkipFeedback(feedback) {
     this.setModalShow(false);
-    const [newCurrentSong, newQueue] = spotify.skipSong(this.state.current_song.track_id, feedback);
-
-    this.setState({
-      current_song: newCurrentSong,
-      queue: newQueue
-    });
+    spotify.skipSong(this.state.current_song.track_id, feedback)
+      .then(([newCurrentSong, newQueue]) => {
+        console.log("Song successfully skippped");
+        this.setState({
+          current_song: newCurrentSong,
+          queue: newQueue
+        });
+      });
   }
 
   addSong(id, name, artists) {
-    const [newCurrentSong, newQueue] = spotify.addSong(id, name, artists);
-
-    this.setState({
-      current_song: newCurrentSong,
-      queue: newQueue
-    });
+    spotify.addSong(id, name, artists)
+      .then(([newCurrentSong, newQueue]) => {
+        console.log("Song successfully added");
+        this.setState({
+          current_song: newCurrentSong,
+          queue: newQueue
+        });
+      });
   }
 
   songFinished() {
-    const [newCurrentSong, newQueue] = spotify.finishSong(this.state.current_song.track_id, this.state.current_song_liked);
-
-    this.setState({
-      current_song: newCurrentSong,
-      queue: newQueue
-    });
+    spotify.finishSong(this.state.current_song.track_id, this.state.current_song_liked)
+      .then(([newCurrentSong, newQueue]) => {
+        console.log("Song successfully finished");
+        this.setState({
+          current_song: newCurrentSong,
+          queue: newQueue
+        });
+      });
   }
 
   setSongLiked() {
