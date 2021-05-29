@@ -341,10 +341,6 @@ class App extends React.Component {
               queue={this.state.queue}
               onSearchChange={this.onSearchChange.bind(this)}
               addSong={this.addSong.bind(this)}
-            /*
-            current_search={this.state.current_search}
-            search_results={this.state.search_results}
-            */
             />
           </div>
         );

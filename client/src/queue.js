@@ -98,7 +98,6 @@ export default class Queue extends React.Component {
     }
 
     render() {
-
         if (this.state.search_results.length > 0) {
             return (
                 <div className="Queue" onClick={this.checkExitClick.bind(this)}>
@@ -148,7 +147,7 @@ export default class Queue extends React.Component {
                                 <SearchBar
                                     onExitClick={this.stopExitClick.bind(this)}
                                     onSearchChange={this.onSearchChange.bind(this)}
-                                    initValue={this.props.current_search}
+                                    initValue={this.state.current_search}
                                     input_active={this.state.input_active}
                                 />
                             </center>
@@ -160,7 +159,7 @@ export default class Queue extends React.Component {
                             <SearchBar
                                 onExitClick={this.stopExitClick.bind(this)}
                                 onSearchChange={this.onSearchChange.bind(this)}
-                                initValue={this.props.current_search}
+                                initValue={this.state.current_search}
                                 input_active={this.state.input_active}
                             />
                         </div>
@@ -174,7 +173,7 @@ export default class Queue extends React.Component {
                         <SearchBar
                             onExitClick={this.stopExitClick.bind(this)}
                             onSearchChange={this.onSearchChange.bind(this)}
-                            initValue={this.props.current_search}
+                            initValue={this.state.current_search}
                             input_active={this.state.input_active}
                         />
                         <Player current_song={this.props.current_song} />
