@@ -54,13 +54,14 @@ router.get('/dashboard', async (req, res) => {
   res.sendFile(path.resolve(__dirname, './client/build', 'index.html'));
 });
 
-// POST /setSeedSongs
-// Endpoint called when the user manually adds three new songs to their queue
-// Request body must contain the session id and list of song IDs
-router.post('/setSeedSongs', (req, res) => {
+// POST /addSong
+// Endpoint called when the user manually adds a new song to their queue
+// Request body must contain the session id and song IDs
+router.post('/addSong', (req, res) => {
   const id = req.query.id;
   if (id in userSessions)
-    userSessions[id].setSeedSongs(req.body.songs);
+    userSessions[id].addSong(req.body.song);
+  res.end();
 });
 
 // POST /skip
@@ -72,6 +73,7 @@ router.post('/skip', (req, res) => {
   const feedback = req.body.feedback;
   if (id in userSessions)
     userSessions[id].skipSong(songId, feedback);
+  res.end();
 });
 
 // POST /finish
@@ -82,42 +84,33 @@ router.post('/finish', (req, res) => {
   const liked = req.query.liked;
   if (id in userSessions)
     userSessions[id].finishSong(songId, liked);
+  res.end();
 });
 
-
-// GET /status
-// Endpoint called when user checks for generated queue clustering status
-// Request query must contain the session id
-// Response body contains status code 0 (working) or 1 (completed)
-router.get('/status', (req, res) => {
+// GET /updates
+// Endpoint to create Server-side Events stream to retrieve queue and 
+// preferences updates
+router.get('/updates', (req, res) => {
   const id = req.query.id;
-  if (id in userSessions)
-    res.json({ status: userSessions[id].status });
-});
+  const headers = {
+    'Content-Type': 'text/event-stream',
+    'Connection': 'keep-alive',
+    'Cache-Control': 'no-cache'
+  };
+  res.writeHead(200, headers);
 
-// GET /queue
-// Endpoint called when user requests to receive the generated queue
-// Request query must contain the session id
-// Response body contains list of song IDs
-router.get('/queue', (req, res) => {
-  const id = req.query.id;
-  if (id in userSessions) {
-    res.json({ queue: userSessions[id].queue });
-    userSessions[id].status = 0;
+  if (!(id in userSessions)) {
+    res.end();
+    return;
   }
-});
 
-// GET /preferences
-// Endpoint called when user requests to receive the current features for the cluster center
-// Request query must contain the session id
-// Response body contains preferences
-router.get('/preferences', (req, res) => {
-  const id = req.query.id;
-  if (id in userSessions) {
-    res.json({ preferences: userSessions[id].preferences });
-    userSessions[id].status = 0;
-  }
-});
+  userSessions[id].sse = res;
+
+  req.on('close', () => {
+    console.log(`Connection closed`);
+    delete userSessions[id];
+  });
+})
 
 
 const port = process.env.PORT || 3000;

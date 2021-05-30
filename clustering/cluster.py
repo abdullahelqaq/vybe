@@ -32,7 +32,7 @@ def cluster_database(data, clusters, threshold):
     data = json.loads(data)
     clusters = json.loads(clusters)
     centroids = [cluster['centroid'] for cluster in clusters]
-    print(f"Clustering database with threshold {threshold} and centroids: {centroids}")
+    print(f"Clustering database")
 
     closest, distances = vq(data, centroids)
     for i in range(len(centroids)):

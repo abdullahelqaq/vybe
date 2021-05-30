@@ -1,6 +1,7 @@
 import SpotifyWebApi from 'spotify-web-api-js';
 
-let currentSong, queue, preferences;
+let currentSong, queue = [];
+let preferences;
 
 let sessionId = null;
 let deviceId = null;
@@ -18,8 +19,6 @@ let spotify = new SpotifyWebApi({
   clientId: clientId
 });
 
-export const checkServerStatusIntervalMs = 5000;
-
 checkUrlParams();
 
 export const authorizationUrl = `${authEndpoint}?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join("%20")}&response_type=code&show_dialog=true`;
@@ -33,82 +32,44 @@ export function checkUrlParams() {
   }
 }
 
-// set seed songs
-// TODO: Implement search feature instead of hardcoding three song IDs
-export function setSeedSongs() {
-  const response = fetch(`http://localhost:3000/setSeedSongs?id=${sessionId}`, {
+export async function addSong(songId, name, artist_names) {
+  const song = {
+    track_id: songId,
+    track_name: name,
+    track_artist: artist_names.join(' & ')
+  };
+  await fetch(`http://localhost:3000/addSong?id=${sessionId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
     mode: 'cors',
     body: JSON.stringify({
-      songs: [...[currentSong], ...queue]
+      song: song
     }
     )
   });
-  return response;
+  if (!currentSong) {
+    currentSong = song;
+    playSong(currentSong.track_id);
+  } else {
+    queue.push(song);
+  }
+    
+  return [currentSong, queue]
 }
 
-// checks status and returns queue and preferences if there is an updated one waiting
-export async function checkStatus() {
-  const statusResponse = await fetch(`http://localhost:3000/status?id=${sessionId}`, {
-    method: 'GET',
-    mode: 'cors'
-  });
-  const statusBody = await statusResponse.json();
-
-  if (statusBody.status == 1) {
-    const queueResponse = await fetch(`http://localhost:3000/queue?id=${sessionId}`, {
-      method: 'GET',
-      mode: 'cors'
-    });
-    const queueBody = await queueResponse.json();
-    const preferencesResponse = await fetch(`http://localhost:3000/preferences?id=${sessionId}`, {
-      method: 'GET',
-      mode: 'cors'
-    });
-    const preferencesBody = await preferencesResponse.json();
-
-    queue = queueBody.queue;
-    preferences = preferencesBody.preferences;
-    return { queue: queue, preferences: preferences };
-  }
-
-  return null;
+export function processUpdate(data) {
+  const updatedQueue = data.queue;
+  const updatedPreferences = data.preferences;
+  currentSong = updatedQueue[0];
+  updatedQueue.shift();
+  queue = updatedQueue;
+  return { currentSong: currentSong, queue: updatedQueue, preferences: updatedPreferences };
 }
 
 export function setDeviceId(id) {
   deviceId = id;
-}
-
-// for demo purposes - add three seed songs to simulate searching and adding them manually
-export function testPopulateQueueSeedSongs() {
-  let songs = [
-    {
-      track_name: "Faded",
-      track_artist: "Alan Walker",
-      track_id: "7gHs73wELdeycvS48JfIos"
-    },
-    {
-      track_name: "Come & Go",
-      track_artist: "Juice WRLD",
-      track_id: "6ltMvd6CjoydQZ4UzAQaqh"
-    },
-    {
-      track_name: "In Your Arms",
-      track_artist: "ILLENIUM",
-      track_id: "70YPzqSEwJvAIQ6nMs1cjY"
-    }
-  ];
-
-  currentSong = songs[0];
-  songs.shift();
-  queue = [...songs];
-  playSong(currentSong.track_id);
-  setSeedSongs();
-
-  return { queue: [...[currentSong], ...queue], preferences: null };
 }
 
 // SONG CONTROLS
@@ -118,7 +79,7 @@ export function playNextSong() {
   queue.shift();
   playSong(currentSong.track_id);
   console.log("Playing next song");
-  
+
   return [currentSong, queue]
 }
 
@@ -127,16 +88,15 @@ export async function playSong(songId) {
 }
 
 export async function pauseSong() {
-  return await spotify.pause({device_id: deviceId});
+  return await spotify.pause({ device_id: deviceId });
 }
 
 export async function resumeSong() {
-  return await spotify.play({device_id: deviceId});
+  return await spotify.play({ device_id: deviceId });
 }
 
-export function skipSong(songId, feedback) {
-  console.log("Song skipped");
-  fetch(`http://localhost:3000/skip?id=${sessionId}`, {
+export async function skipSong(songId, feedback) {
+  await fetch(`http://localhost:3000/skip?id=${sessionId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -151,9 +111,8 @@ export function skipSong(songId, feedback) {
   return playNextSong();
 }
 
-export function finishSong(songId, liked) {
-  console.log("Song finished");
-  fetch(`http://localhost:3000/finish?id=${sessionId}`, {
+export async function finishSong(songId, liked) {
+  await fetch(`http://localhost:3000/finish?id=${sessionId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -170,4 +129,8 @@ export function finishSong(songId, liked) {
 
 export async function restartSong() {
   return await spotify.seek(0);
+}
+
+export async function search(query) {
+  return await spotify.searchTracks(query);
 }

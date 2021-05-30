@@ -11,10 +11,11 @@ class Session {
     this.accessToken = '';
     this.refreshToken = '';
 
+    this.sse = null;
+
     this.queue = [];
     this.preferences = [];
     this.status = 0; // 0 for idle, 1 for new queue waiting
-    this.seedSongs = [];
 
     // background worker init
     this.worker = new Worker('./worker.js');
@@ -23,17 +24,9 @@ class Session {
 
   processWorkerUpdate(msg) {
     switch (msg.type) {
-      case 'queue':
-        this.queue = msg.data;
-        // console.log(this.queue);
-        break;
-      case 'preferences':
-        this.preferences = msg.data;
-        // console.log(this.preferences);
-        break;
-      case 'status':
+      case 'update':
         console.log("Updated queue and preferences");
-        this.status = msg.data;
+        this.sse.write(`data: ${JSON.stringify(msg.data)}\n\n`);
         break;
     }
   }
@@ -60,9 +53,8 @@ class Session {
     this.setTokens(accessToken, refreshToken);
   }
 
-  setSeedSongs(songIds) {
-    this.seedSongs = songIds;
-    this.worker.postMessage({type: 'seedSongs', data: songIds});
+  addSong(song) {
+    this.worker.postMessage({type: 'song', data: song});
   }
 
   setTokens(accessToken, refreshToken) {
