@@ -99,6 +99,13 @@ h1 {
   width: 90%;
 }
 
+.Queue-Footer {
+  position: fixed;
+  left: 0;
+  bottom: 50px;
+  width: 100%;
+}
+
 .modal-input-desc {
   grid-column-start: span 2;
 }

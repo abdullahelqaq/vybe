@@ -55,7 +55,7 @@ export async function addSong(songId, name, artist_names) {
   } else {
     queue.push(song);
   }
-    
+
   return [currentSong, queue]
 }
 
@@ -70,6 +70,20 @@ export function processUpdate(data) {
 
 export function setDeviceId(id) {
   deviceId = id;
+}
+
+export async function setQueueMode(queueMode) {
+  await fetch(`http://localhost:3000/suggestionMode?id=${sessionId}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    mode: 'cors',
+    body: JSON.stringify({
+      mode: queueMode
+    }
+    )
+  });
 }
 
 // SONG CONTROLS

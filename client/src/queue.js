@@ -1,6 +1,8 @@
 import React from 'react';
 import './App.css';
 import Player, { player_controls, renderQueueEntries } from './player_ui.js'
+import Toggle from 'react-toggle'
+import "react-toggle/style.css"
 
 function SearchBar(props) {
     return (
@@ -181,6 +183,28 @@ export default class Queue extends React.Component {
                     <div className="Queue-Body">
                         <h2 className="Header-Left">Queue</h2>
                         {renderQueueEntries(this.props.queue)}
+                        {this.props.clusters_set == true && (
+                            <div className="Queue-Footer">
+                                <b><p>Queue Music Based On</p></b>
+                                <center>
+                                    <div className="modal-input">
+                                        <span>Genre</span>
+                                        <label onClick={e => {
+                                            e.stopPropagation();
+                                        }}>
+                                            <Toggle
+                                                defaultChecked={!this.props.genre_mode}
+                                                icons={false}
+                                                onChange={e => {
+                                                    this.props.setGenreMode(!e.target.checked);
+                                                }}
+                                            />
+                                        </label>
+                                        <span>vybe AI</span>
+                                    </div>
+                                </center>
+                            </div>
+                        )}
                     </div>
                 </div>
             );
