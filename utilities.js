@@ -11,11 +11,28 @@ class SpotifyWrapper {
 
   // Retrieve the user's top tracks (limit of 50 tracks)
   async retrieveUserTopTracks() {
-    const topTracks = await this.spotify.getMyTopTracks();
-    return this.getAudioFeatures(topTracks.body.items);
+    let topTracks = await this.spotify.getMyTopTracks();
+    const features = await this.getAudioFeatures(topTracks.body.items);
+    return features;
   }
 
-  // Given a list of objects with an 'id' property, generate a dictionary of audio features for each one
+  // Extract genres for each artist and store counts
+  async retrieveTrackGenres(tracks) {
+    let genres = {};
+    for (let track of tracks) {
+      const trackMetadata = await this.spotify.getTrack(track.track_id);
+      for (const artist of trackMetadata.body.artists) {
+        const trackGenres = await this.spotify.getArtist(artist.id);
+        track.genres = trackGenres.body.genres;
+        trackGenres.body.genres.forEach((genre) => {
+          genres[genre] = (genres[genre] || 0) + 1;
+        });
+      }
+    }
+    return genres;
+  }
+
+  // Given a list of objects with an 'id' property, generate a dictionary of audio features and genre for each one
   async getAudioFeatures(tracks) {
     let features = {};
     for (let track of tracks) {
