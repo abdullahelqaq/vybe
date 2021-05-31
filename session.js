@@ -13,9 +13,10 @@ class Session {
 
     this.sse = null;
 
-    this.queue = [];
-    this.preferences = [];
-    this.status = 0; // 0 for idle, 1 for new queue waiting
+    this.skippedSongs = 0;
+    this.skippedSongFeedback = [];
+    this.finishedSongs = 0;
+    this.likedSongs = 0;
 
     // background worker init
     this.worker = new Worker('./worker.js');
@@ -65,10 +66,27 @@ class Session {
 
   skipSong(songId, feedback) {
     this.worker.postMessage({type: 'skip', data: {id: songId, feedback: feedback}});
+    this.skippedSongs++;
+    this.skippedSongFeedback.push(feedback);
   }
 
   finishSong(songId, liked) {
     this.worker.postMessage({type: 'finish', data: {id: songId, liked: liked}});
+    this.finishedSongs++;
+    if (liked) this.likedSongs++;
+  }
+
+  setMode(mode) {
+    this.stats();
+    this.worker.postMessage({type: 'mode', data: {mode: mode}});
+  }
+
+  stats() {
+    console.log(`Stats (session ${this.sessionId}): Finished ${this.finishedSongs}, Liked ${this.likedSongs}, Skipped ${this.skippedSongs}, Feedback: ${this.skippedSongFeedback}`);
+    this.skippedSongs = 0;
+    this.skippedSongFeedback = [];
+    this.finishedSongs = 0;
+    this.likedSongs = 0;
   }
 }
 

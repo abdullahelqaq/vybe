@@ -87,6 +87,16 @@ router.post('/finish', (req, res) => {
   res.end();
 });
 
+// POST /suggestionMode
+// Endpoint called when to switch song suggestion mode
+router.post('/suggestionMode', (req, res) => {
+  const id = req.query.id;
+  const mode = req.body.mode;
+  if (id in userSessions)
+    userSessions[id].setMode(mode);
+  res.end();
+});
+
 // GET /updates
 // Endpoint to create Server-side Events stream to retrieve queue and 
 // preferences updates
