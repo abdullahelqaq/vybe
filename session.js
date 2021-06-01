@@ -3,7 +3,7 @@ const fetch = require('node-fetch');
 
 const clientId = "62598dfbbefd46eeb90783eb0b6d0ad9";
 const clientSecret = "660c17961ea5435a9efaada516d3f528";
-const redirectUri = "http://localhost:3000/authorized";
+const redirectUri = "https://vybemusic.herokuapp.com/authorized";
 
 class Session {
   constructor(id) {

@@ -11,7 +11,7 @@ const urlParams = new URLSearchParams(queryString);
 export const authEndpoint = 'https://accounts.spotify.com/authorize';
 
 const clientId = "62598dfbbefd46eeb90783eb0b6d0ad9";
-const redirectUri = "http://localhost:3000/authorized";
+const redirectUri = "https://vybemusic.herokuapp.com/authorized";
 const scopes = ['user-top-read', 'playlist-read-private', 'user-modify-playback-state', "streaming", "user-read-email", "user-read-private"];
 
 let spotify = new SpotifyWebApi({
@@ -38,7 +38,7 @@ export async function addSong(songId, name, artist_names) {
     track_name: name,
     track_artist: artist_names.join(' & ')
   };
-  await fetch(`http://localhost:3000/addSong?id=${sessionId}`, {
+  await fetch(`https://vybemusic.herokuapp.com/addSong?id=${sessionId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -73,7 +73,7 @@ export function setDeviceId(id) {
 }
 
 export async function setQueueMode(queueMode) {
-  await fetch(`http://localhost:3000/suggestionMode?id=${sessionId}`, {
+  await fetch(`https://vybemusic.herokuapp.com/suggestionMode?id=${sessionId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -110,7 +110,7 @@ export async function resumeSong() {
 }
 
 export async function skipSong(songId, feedback) {
-  await fetch(`http://localhost:3000/skip?id=${sessionId}`, {
+  await fetch(`https://vybemusic.herokuapp.com/skip?id=${sessionId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -126,7 +126,7 @@ export async function skipSong(songId, feedback) {
 }
 
 export async function finishSong(songId, liked) {
-  await fetch(`http://localhost:3000/finish?id=${sessionId}`, {
+  await fetch(`https://vybemusic.herokuapp.com/finish?id=${sessionId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
