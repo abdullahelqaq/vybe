@@ -58,8 +58,18 @@ class ClusteringWrapper {
     const task = new Promise((resolve, reject) => {
       var process = spawn('python', [this.path, 'cluster']);
       process.stdin.write(JSON.stringify(data) + '\n');
+      let lines = [];
+      let currentChunk = '';
       process.stdout.on('data', function (data) {
-        let lines = data.toString().split("\n");
+        currentChunk += data.toString();
+        let n = currentChunk.indexOf('\n');
+        while (~n) {
+          lines.push(currentChunk.substring(0, n));
+          currentChunk = currentChunk.substring(n+1);
+          n = currentChunk.indexOf('\n');
+        }
+      });
+      process.stdout.on('end', function () {
         for (let s of lines) {
           if (s.startsWith("Result: ") === true) {
             s = s.replace("Result: ", "");
@@ -83,11 +93,20 @@ class ClusteringWrapper {
     const task = new Promise((resolve, reject) => {
       var process = spawn('python', [this.path, 'predict', JSON.stringify(centroids), t]);
       process.stdin.write(JSON.stringify(data) + '\n');
+      let lines = [];
+      let currentChunk = '';
       process.stdout.on('data', function (data) {
-        let lines = data.toString().split("\n");
+        currentChunk += data.toString();
+        let n = currentChunk.indexOf('\n');
+        while (~n) {
+          lines.push(currentChunk.substring(0, n));
+          currentChunk = currentChunk.substring(n+1);
+          n = currentChunk.indexOf('\n');
+        }
+      });
+      process.stdout.on('end', function () {
         for (let s of lines) {
           if (s.startsWith("Result: ") === true) {
-            console.log(s);
             s = s.replace("Result: ", "");
             resolve(JSON.parse(s));
           } else {
