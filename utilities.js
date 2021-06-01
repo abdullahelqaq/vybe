@@ -56,7 +56,7 @@ class ClusteringWrapper {
   // Perform clustering by communicating with python module
   async cluster(data) {
     const task = new Promise((resolve, reject) => {
-      var process = spawn('python', [this.path, 'cluster']);
+      var process = spawn('py -3', [this.path, 'cluster']);
       process.stdin.write(JSON.stringify(data) + '\n');
       process.stdout.on('data', function (data) {
         let lines = data.toString().split("\n");
@@ -81,7 +81,7 @@ class ClusteringWrapper {
   async determineClusters(raw, centroids, t) {
     const data = this.getClusterFeatures(raw);
     const task = new Promise((resolve, reject) => {
-      var process = spawn('python', [this.path, 'predict', JSON.stringify(centroids), t]);
+      var process = spawn('py -3', [this.path, 'predict', JSON.stringify(centroids), t]);
       process.stdin.write(JSON.stringify(data) + '\n');
       process.stdout.on('data', function (data) {
         let lines = data.toString().split("\n");

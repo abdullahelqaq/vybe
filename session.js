@@ -78,11 +78,12 @@ class Session {
 
   setMode(mode) {
     this.stats();
+    console.log("Switching mode to " + mode);
     this.worker.postMessage({type: 'mode', data: {mode: mode}});
   }
 
   stats() {
-    console.log(`Stats (session ${this.sessionId}): Finished ${this.finishedSongs}, Liked ${this.likedSongs}, Skipped ${this.skippedSongs}, Feedback: ${this.skippedSongFeedback}`);
+    console.log(`Session stats - ID: ${this.sessionId}), Finished ${this.finishedSongs}, Liked ${this.likedSongs}, Skipped ${this.skippedSongs}, Feedback: ${this.skippedSongFeedback}`);
     this.skippedSongs = 0;
     this.skippedSongFeedback = [];
     this.finishedSongs = 0;
