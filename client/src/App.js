@@ -30,7 +30,7 @@ class App extends React.Component {
     let _token = hash.token;
     if (_token) {
       // subscribe to SSE 
-      const _sse_source = new EventSource(`http://localhost:3000/updates?id=${hash.id}`);
+      const _sse_source = new EventSource(`https://vybemusic.herokuapp.com/updates?id=${hash.id}`);
       _sse_source.onmessage = event => this.updateNewState(event);
 
       // Set token & songs
@@ -55,6 +55,8 @@ class App extends React.Component {
       modal_show: false,
 
       search_results: [],
+      genre_mode: false,
+      clusters_set: false,
     }
   }
 
@@ -82,7 +84,8 @@ class App extends React.Component {
     this.setState({
       mood_params: newStatus.preferences,
       queue: newStatus.queue,
-      current_song: newStatus.currentSong
+      current_song: newStatus.currentSong,
+      clusters_set: true,
     });
 
     var maxIndex = 0;
@@ -159,6 +162,16 @@ class App extends React.Component {
           queue: newQueue
         });
       });
+  }
+
+  setGenreMode(isGenreMode) {
+    this.setState({
+      genre_mode: isGenreMode,
+    });
+    console.log("new genre mode");
+    console.log(isGenreMode);
+
+    spotify.setQueueMode(isGenreMode ? "genre" : "cluster");
   }
 
   setSongLiked() {
@@ -347,6 +360,9 @@ class App extends React.Component {
               queue={this.state.queue}
               onSearchChange={this.onSearchChange.bind(this)}
               addSong={this.addSong.bind(this)}
+              genre_mode={this.state.genre_mode}
+              setGenreMode={this.setGenreMode.bind(this)}
+              clusters_set={this.state.clusters_set}
             />
           </div>
         );

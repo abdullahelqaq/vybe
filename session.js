@@ -3,7 +3,9 @@ const fetch = require('node-fetch');
 
 const clientId = "62598dfbbefd46eeb90783eb0b6d0ad9";
 const clientSecret = "660c17961ea5435a9efaada516d3f528";
-const redirectUri = "http://localhost:3000/authorized";
+const url = 'https://vybemusic.herokuapp.com';
+// const url = 'http://localhost:3000';
+const redirectUri = `${url}/authorized`;
 
 class Session {
   constructor(id) {
@@ -13,9 +15,10 @@ class Session {
 
     this.sse = null;
 
-    this.queue = [];
-    this.preferences = [];
-    this.status = 0; // 0 for idle, 1 for new queue waiting
+    this.skippedSongs = 0;
+    this.skippedSongFeedback = [];
+    this.finishedSongs = 0;
+    this.likedSongs = 0;
 
     // background worker init
     this.worker = new Worker('./worker.js');
@@ -65,10 +68,28 @@ class Session {
 
   skipSong(songId, feedback) {
     this.worker.postMessage({type: 'skip', data: {id: songId, feedback: feedback}});
+    this.skippedSongs++;
+    this.skippedSongFeedback.push(feedback);
   }
 
   finishSong(songId, liked) {
     this.worker.postMessage({type: 'finish', data: {id: songId, liked: liked}});
+    this.finishedSongs++;
+    if (liked) this.likedSongs++;
+  }
+
+  setMode(mode) {
+    this.stats();
+    console.log("Switching mode to " + mode);
+    this.worker.postMessage({type: 'mode', data: {mode: mode}});
+  }
+
+  stats() {
+    console.log(`Session stats - ID: ${this.sessionId}), Finished ${this.finishedSongs}, Liked ${this.likedSongs}, Skipped ${this.skippedSongs}, Feedback: ${this.skippedSongFeedback}`);
+    this.skippedSongs = 0;
+    this.skippedSongFeedback = [];
+    this.finishedSongs = 0;
+    this.likedSongs = 0;
   }
 }
 

@@ -19,7 +19,10 @@ const skipSongClusterCentersWeights = [-0.1, -0.25, -0.5];
 const likeSongClusterCentersWeight = 0.3;
 const finishSongClusterCentersWeight = 0.15;
 
-let songs, topTracks, keys, queue = [];
+const allowExplicit = false;
+let suggestionMode = 'cluster'; // 'cluster' or 'genre'
+
+let songs, genreScores, topTracks, keys, queue = [];
 let clusters, targetCluster;
 
 let spotify, clustering;
@@ -40,6 +43,9 @@ parentPort.on("message", function (msg) {
       break;
     case 'finish':
       taskQueue.push([finishSong, [msg.data.id, msg.data.liked]]);
+      break;
+    case 'mode':
+      taskQueue.push([setSuggestionMode, [msg.data.mode]]);
       break;
   }
 });
@@ -71,7 +77,8 @@ async function initialize(accessToken) {
   let tracks = await spotify.retrieveUserTopTracks();
 
   //normalize the data
-  [songs, keys, topTracks] = normalizeData(dbSongs, tracks);
+  [songs, topTracks] = normalizeData(dbSongs, tracks);
+  keys = Object.keys(songs);
 }
 
 // Apply k-means clustering and use the seed songs to identify the target 
@@ -82,7 +89,16 @@ async function setSeedSongs(seedSongs) {
   // perform clustering
   const features = clustering.getClusterFeatures(Object.values(topTracks));
   clusters = await clustering.cluster(features)
-  console.log(clusters);
+
+  // retrieve genres for seed songs and assign scores to the song database
+  genreScores = await spotify.retrieveTrackGenres(seedSongs);
+  for (let [id, song] of Object.entries(songs)) {
+    song.genre_score = Math.max(genreScores[song.playlist_genre] || 0, genreScores[song.playlist_subgenre] || 0);
+  }
+  console.log("Genre scores:");
+  console.log(genreScores);
+  // sort by genre score
+  songs = Object.fromEntries(Object.entries(songs).sort((a, b) => b[1].genre_score - a[1].genre_score));
 
   // determine target cluster
   const seedSongsFeatures = await spotify.getAudioFeatures(seedSongs);
@@ -102,6 +118,11 @@ async function setSeedSongs(seedSongs) {
   console.log('Target Cluster');
   console.log(targetCluster);
 
+  await updateQueue(false, true);
+}
+
+async function setSuggestionMode(mode) {
+  suggestionMode = mode;
   await updateQueue(false, true);
 }
 
@@ -130,7 +151,7 @@ async function loadDatabase() {
   return task;
 }
 
-// Normalize all features between 0 and 1
+// Normalize all features between 0 and 1 and assign genre score to each song
 // 
 // Features such as tempo were much larger compared to analytical features like danceability and valence
 // causing clusters to be skewed 
@@ -153,33 +174,31 @@ function normalizeData(db, tracks) {
       const [min, max] = minmax[featureName];
       const val = song[featureName];
       const delta = max - min;
-      if (delta == 0)
-        song[featureName] = 1;
-      else
-        song[featureName] = (val - min) / delta;
+      song[featureName] = delta == 0 ? 1 : (val - min) / delta;
+      song.user_song = false;
     }
   }
+
   for (let [id, song] of Object.entries(tracks)) {
     for (const featureName of clusterFeatures) {
       const [min, max] = minmax[featureName];
       const val = song[featureName];
       const delta = max - min;
-      if (delta == 0)
-        song[featureName] = 1;
-      else
-        song[featureName] = (val - min) / delta;
+      song[featureName] = delta == 0 ? 1 : (val - min) / delta;
     }
   }
 
-  return [db, Object.keys(db), tracks];
+  return [db, tracks];
 }
 
 // Adjust the target cluster center using a specified weight
 async function adjustClusterCenter(weight, features) {
-  const newCentroid = features.map((x, i) => targetCluster.centroid[i] + ((targetCluster.centroid[i] - x) * weight));
-  // clamp value
-  targetCluster.centroid = newCentroid.map(x => Math.min(Math.max(x, 0), 1));
-  clusters[targetCluster.idx] = targetCluster;
+  if (suggestionMode == 'cluster') {
+    const newCentroid = features.map((x, i) => targetCluster.centroid[i] + ((targetCluster.centroid[i] - x) * weight));
+    // clamp value
+    targetCluster.centroid = newCentroid.map(x => Math.min(Math.max(x, 0), 1));
+    clusters[targetCluster.idx] = targetCluster;
+  }
 }
 
 // Randomly selects n elements that are in the target cluster for the queue
@@ -191,24 +210,40 @@ async function updateQueue(shift, reset) {
 
   //find candidate songs
   let candidates = [];
-  const predClusters = await clustering.determineClusters(Object.values(songs), clusters.centroids, threshold);
-  for (let i = 0; i < predClusters.length; i++) {
-    const key = keys[i];
-    songs[key].cluster = predClusters[i];
-    songs[key].user_song = false;
-    if (songs[key].cluster == targetCluster.idx && songs[key].played == 0)
-      candidates.push(songs[key]);
+  if (suggestionMode == 'cluster') {
+    // find songs in target cluster
+    const predClusters = await clustering.determineClusters(Object.values(songs), clusters.centroids, threshold);
+    for (let i = 0; i < predClusters.length; i++) {
+      const key = keys[i];
+      songs[key].cluster = predClusters[i];
+      if (songs[key].cluster == targetCluster.idx && songs[key].played == 0)
+        if (allowExplicit || songs[key].explicit == 'False')
+          candidates.push(songs[key]);
+    }
+  }
+  else if (suggestionMode == 'genre') {
+    // find first 100 unplayed songs (songs sorted by genre score)
+    let i = 0;
+    while (candidates.length < 100) {
+      const key = keys[i];
+      if (songs[key].played == 0)
+        if (allowExplicit || songs[key].explicit == 'False')
+            candidates.push(songs[key]);
+      i++;
+    }
   }
 
   // select songs from db
   if (reset) {
     for (let i = 1; i < queueSize; i++) {
+      const idx = Math.floor(Math.random() * candidates.length);
       if (i < queue.length) {
         if (!queue[i].user_song)
-          queue[i] = candidates[Math.floor(Math.random() * candidates.length)];
+          queue[i] = candidates[idx];
       } else {
-        queue.push(candidates[Math.floor(Math.random() * candidates.length)]);
+        queue.push(candidates[idx]);
       }
+      candidates.splice(idx, 1);
     }
   } else {
     if (queue.length != queueSize)

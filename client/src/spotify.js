@@ -8,10 +8,13 @@ let deviceId = null;
 const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
 
+const url = 'https://vybemusic.herokuapp.com';
+// const url = 'http://localhost:3000';
+
 export const authEndpoint = 'https://accounts.spotify.com/authorize';
 
 const clientId = "62598dfbbefd46eeb90783eb0b6d0ad9";
-const redirectUri = "http://localhost:3000/authorized";
+const redirectUri = `${url}/authorized`;
 const scopes = ['user-top-read', 'playlist-read-private', 'user-modify-playback-state', "streaming", "user-read-email", "user-read-private"];
 
 let spotify = new SpotifyWebApi({
@@ -38,7 +41,7 @@ export async function addSong(songId, name, artist_names) {
     track_name: name,
     track_artist: artist_names.join(' & ')
   };
-  await fetch(`http://localhost:3000/addSong?id=${sessionId}`, {
+  await fetch(`${url}/addSong?id=${sessionId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -55,7 +58,7 @@ export async function addSong(songId, name, artist_names) {
   } else {
     queue.push(song);
   }
-    
+
   return [currentSong, queue]
 }
 
@@ -70,6 +73,20 @@ export function processUpdate(data) {
 
 export function setDeviceId(id) {
   deviceId = id;
+}
+
+export async function setQueueMode(queueMode) {
+  await fetch(`${url}/suggestionMode?id=${sessionId}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    mode: 'cors',
+    body: JSON.stringify({
+      mode: queueMode
+    }
+    )
+  });
 }
 
 // SONG CONTROLS
@@ -96,7 +113,7 @@ export async function resumeSong() {
 }
 
 export async function skipSong(songId, feedback) {
-  await fetch(`http://localhost:3000/skip?id=${sessionId}`, {
+  await fetch(`${url}/skip?id=${sessionId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -112,7 +129,7 @@ export async function skipSong(songId, feedback) {
 }
 
 export async function finishSong(songId, liked) {
-  await fetch(`http://localhost:3000/finish?id=${sessionId}`, {
+  await fetch(`${url}/finish?id=${sessionId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
