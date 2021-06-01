@@ -99,7 +99,6 @@ async function setSeedSongs(seedSongs) {
   console.log(genreScores);
   // sort by genre score
   songs = Object.fromEntries(Object.entries(songs).sort((a, b) => b[1].genre_score - a[1].genre_score));
-  keys = Object.keys(songs);
 
   // determine target cluster
   const seedSongsFeatures = await spotify.getAudioFeatures(seedSongs);
@@ -124,7 +123,7 @@ async function setSeedSongs(seedSongs) {
 
 async function setSuggestionMode(mode) {
   suggestionMode = mode;
-  updateQueue(false, true);
+  await updateQueue(false, true);
 }
 
 // Load the csv database as a JSON object
@@ -217,8 +216,9 @@ async function updateQueue(shift, reset) {
     for (let i = 0; i < predClusters.length; i++) {
       const key = keys[i];
       songs[key].cluster = predClusters[i];
+      console.log(songs[key]);
       if (songs[key].cluster == targetCluster.idx && songs[key].played == 0)
-        if (allowExplicit || !songs[key].explicit)
+        if (allowExplicit || songs[key].explicit == 'False')
           candidates.push(songs[key]);
     }
   }
@@ -228,7 +228,7 @@ async function updateQueue(shift, reset) {
     while (candidates.length < 100) {
       const key = keys[i];
       if (songs[key].played == 0)
-        if (allowExplicit || !songs[key].explicit)
+        if (allowExplicit || songs[key].explicit == 'False')
             candidates.push(songs[key]);
       i++;
     }
