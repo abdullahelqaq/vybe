@@ -20,7 +20,7 @@ const likeSongClusterCentersWeight = 0.3;
 const finishSongClusterCentersWeight = 0.15;
 
 const allowExplicit = false;
-let suggestionMode = 'genre'; // 'cluster' or 'genre'
+let suggestionMode = 'cluster'; // 'cluster' or 'genre'
 
 let songs, genreScores, topTracks, keys, queue = [];
 let clusters, targetCluster;

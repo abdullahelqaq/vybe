@@ -87,6 +87,7 @@ class ClusteringWrapper {
         let lines = data.toString().split("\n");
         for (let s of lines) {
           if (s.startsWith("Result: ") === true) {
+            console.log(s);
             s = s.replace("Result: ", "");
             resolve(JSON.parse(s));
           } else {
