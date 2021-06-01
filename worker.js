@@ -216,7 +216,6 @@ async function updateQueue(shift, reset) {
     for (let i = 0; i < predClusters.length; i++) {
       const key = keys[i];
       songs[key].cluster = predClusters[i];
-      console.log(songs[key]);
       if (songs[key].cluster == targetCluster.idx && songs[key].played == 0)
         if (allowExplicit || songs[key].explicit == 'False')
           candidates.push(songs[key]);
