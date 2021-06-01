@@ -19,6 +19,7 @@ const skipSongClusterCentersWeights = [-0.1, -0.25, -0.5];
 const likeSongClusterCentersWeight = 0.3;
 const finishSongClusterCentersWeight = 0.15;
 
+const allowExplicit = false;
 let suggestionMode = 'genre'; // 'cluster' or 'genre'
 
 let songs, genreScores, topTracks, keys, queue = [];
@@ -217,7 +218,8 @@ async function updateQueue(shift, reset) {
       const key = keys[i];
       songs[key].cluster = predClusters[i];
       if (songs[key].cluster == targetCluster.idx && songs[key].played == 0)
-        candidates.push(songs[key]);
+        if (allowExplicit || !songs[key].explicit)
+          candidates.push(songs[key]);
     }
   }
   else if (suggestionMode == 'genre') {
@@ -226,7 +228,8 @@ async function updateQueue(shift, reset) {
     while (candidates.length < 100) {
       const key = keys[i];
       if (songs[key].played == 0)
-        candidates.push(songs[key]);
+        if (allowExplicit || !songs[key].explicit)
+            candidates.push(songs[key]);
       i++;
     }
   }
