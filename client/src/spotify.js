@@ -8,7 +8,7 @@ let deviceId = null;
 const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
 
-const url = 'http://vybemusic.herokuapp.com';
+const url = 'https://vybemusic.herokuapp.com';
 // const url = 'http://localhost:3000';
 
 export const authEndpoint = 'https://accounts.spotify.com/authorize';
