@@ -30,7 +30,8 @@ class App extends React.Component {
     let _token = hash.token;
     if (_token) {
       // subscribe to SSE 
-      const _sse_source = new EventSource(`https://vybemusic.herokuapp.com/updates?id=${hash.id}`);
+      const _sse_source = new EventSource(`http://localhost:3000/updates?id=${hash.id}`);
+      // const _sse_source = new EventSource(`https://vybemusic.herokuapp.com/updates?id=${hash.id}`);
       _sse_source.onmessage = event => this.updateNewState(event);
 
       // Set token & songs
@@ -91,14 +92,15 @@ class App extends React.Component {
     var maxIndex = 0;
     for (let i = 0; i < this.state.mood_params.length; i++) {
       if (this.state.mood_params[i].value > this.state.mood_params[maxIndex].value) {
-        maxIndex = i;
+        if (this.state.mood_params[i].name != "Loudness") // ignore loudness as current mood
+          maxIndex = i;
       }
     }
 
     var newMood = "";
     switch (this.state.mood_params[maxIndex].name) {
-      case "Accousticness":
-        newMood = "Accoustic";
+      case "Acousticness":
+        newMood = "Acoustic";
         break;
       case "Danceability":
         newMood = "Dancey";
@@ -117,7 +119,7 @@ class App extends React.Component {
         newMood = "Speechy";
         break;
       case "Tempo":
-        newMood = "High-Tempo";
+        newMood = "Upbeat";
         break;
       case "Valence":
         newMood = "Positive";

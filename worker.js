@@ -24,6 +24,7 @@ let suggestionMode = 'cluster'; // 'cluster' or 'genre'
 
 let songs, genreScores, topTracks, keys, queue = [];
 let clusters, targetCluster;
+let preferencesBounds = {};
 
 let spotify, clustering;
 let taskQueue = [];
@@ -157,34 +158,38 @@ async function loadDatabase() {
 // causing clusters to be skewed 
 function normalizeData(db, tracks) {
   let data = { ...tracks, ...db };
-  minmax = {}
   //get min/max values
-  for (const featureName of clusterFeatures) {
+  for (const featureName of audioFeatures) {
+    const feature = featureName.toLowerCase();
     let min = Number.MAX_SAFE_INTEGER, max = Number.MIN_SAFE_INTEGER;
     for (const [id, song] of Object.entries(data)) {
-      min = Math.min(min, song[featureName]);
-      max = Math.max(max, song[featureName]);
+      if (song[feature] != 0) {
+        min = Math.min(min, song[feature]);
+        max = Math.max(max, song[feature]);
+      }
     }
-    minmax[featureName] = [min, max];
+    preferencesBounds[featureName] = [min, max];
   }
 
   // normalize data using calculated min/max
   for (let [id, song] of Object.entries(db)) {
-    for (const featureName of clusterFeatures) {
-      const [min, max] = minmax[featureName];
-      const val = song[featureName];
+    for (const featureName of audioFeatures) {
+      const feature = featureName.toLowerCase();
+      const [min, max] = preferencesBounds[featureName];
+      const val = song[feature];
       const delta = max - min;
-      song[featureName] = delta == 0 ? 1 : (val - min) / delta;
+      song[feature] = delta == 0 ? 1 : (val - min) / delta;
       song.user_song = false;
     }
   }
 
   for (let [id, song] of Object.entries(tracks)) {
-    for (const featureName of clusterFeatures) {
-      const [min, max] = minmax[featureName];
-      const val = song[featureName];
+    for (const featureName of audioFeatures) {
+      const feature = featureName.toLowerCase();
+      const [min, max] = preferencesBounds[featureName];
+      const val = song[feature];
       const delta = max - min;
-      song[featureName] = delta == 0 ? 1 : (val - min) / delta;
+      song[feature] = delta == 0 ? 1 : (val - min) / delta;
     }
   }
 
@@ -228,7 +233,7 @@ async function updateQueue(shift, reset) {
       const key = keys[i];
       if (songs[key].played == 0)
         if (allowExplicit || songs[key].explicit == 'False')
-            candidates.push(songs[key]);
+          candidates.push(songs[key]);
       i++;
     }
   }
@@ -260,11 +265,14 @@ async function updateQueue(shift, reset) {
     });
   });
   for (const [name, values] of Object.entries(totalPreferences)) {
-    preferences.push({ name: name, value: values.reduce((a, b) => a + b) / values.length })
+    const mid = Math.floor(values.length / 2),
+      nums = [...values].sort((a, b) => a - b);
+    const val = values.length % 2 !== 0 ? nums[mid] : (nums[mid - 1] + nums[mid]) / 2;
+    preferences.push({ name: name, value: val });
   }
 
   // relay to main thread
-  parentPort.postMessage({ type: 'update', data: {'queue': queue, 'preferences': preferences} });
+  parentPort.postMessage({ type: 'update', data: { 'queue': queue, 'preferences': preferences } });
 }
 
 // Skip the song and use user feedback to adjust cluster centers
