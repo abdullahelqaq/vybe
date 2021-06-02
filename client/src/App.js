@@ -137,7 +137,8 @@ class App extends React.Component {
         console.log("Song successfully skippped");
         this.setState({
           current_song: newCurrentSong,
-          queue: newQueue
+          queue: newQueue,
+          current_song_liked: false,
         });
       });
   }
@@ -159,7 +160,8 @@ class App extends React.Component {
         console.log("Song successfully finished");
         this.setState({
           current_song: newCurrentSong,
-          queue: newQueue
+          queue: newQueue,
+          current_song_liked: false,
         });
       });
   }
