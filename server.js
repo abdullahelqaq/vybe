@@ -116,6 +116,10 @@ router.get('/updates', (req, res) => {
 
   userSessions[id].sse = res;
 
+  setInterval(function () {
+    res.write(`event: ping\n\n`);
+  }, 55); //send ping
+
   req.on('close', () => {
     console.log(`Connection closed`);
     delete userSessions[id];

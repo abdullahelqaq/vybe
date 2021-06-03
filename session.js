@@ -29,6 +29,7 @@ class Session {
     switch (msg.type) {
       case 'update':
         console.log("Updated queue and preferences");
+        this.sse.write(`event: update\n`);
         this.sse.write(`data: ${JSON.stringify(msg.data)}\n\n`);
         break;
     }
