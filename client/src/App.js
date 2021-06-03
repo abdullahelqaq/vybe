@@ -32,7 +32,12 @@ class App extends React.Component {
       // subscribe to SSE 
       // const _sse_source = new EventSource(`http://localhost:3000/updates?id=${hash.id}`);
       const _sse_source = new EventSource(`https://vybemusic.herokuapp.com/updates?id=${hash.id}`);
-      _sse_source.onmessage = event => this.updateNewState(event);
+      _sse_source.addEventListener('ping', event => {
+        console.log('Pinged');
+      });
+      _sse_source.addEventListener('update', event => {
+        this.updateNewState(event);
+      });
 
       // Set token & songs
       this.setState({
